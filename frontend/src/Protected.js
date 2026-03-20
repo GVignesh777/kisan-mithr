@@ -11,11 +11,14 @@ import Loader from "./utils/loader";
  */
 export const ProtectedRoute = () => {
     const location = useLocation();
-    const [isChecking, setIsChecking] = useState(true);
     const { isAuthenticated, user, setUser, clearUser } = useUserStore();
+    // Only check if we are NOT already authenticated in the local store
+    // This avoids the loader-loop for users who just logged in.
+    const [isChecking, setIsChecking] = useState(!isAuthenticated);
 
     useEffect(() => {
         let isMounted = true;
+        
         const verifyAuth = async () => {
             try {
                 const result = await checkUserAuth();
@@ -23,22 +26,33 @@ export const ProtectedRoute = () => {
                     if (result?.isAuthenticated) {
                         setUser(result.user);
                     } else {
-                        clearUser();
+                        // Only clear user if there's no local token either.
+                        // This prevents wiping out a freshly-logged-in user if the
+                        // background check fails or returns stale data.
+                        const hasToken = !!localStorage.getItem('auth_token');
+                        if (!hasToken) {
+                            clearUser();
+                        }
                     }
                 }
             } catch (error) {
                 console.error("Auth verification failed:", error);
-                if (isMounted) clearUser();
+                // Only force-logout on explicit unauthorized responses AND no local token
+                const hasToken = !!localStorage.getItem('auth_token');
+                if (!hasToken && (error?.response?.status === 401 || error?.response?.status === 403)) {
+                    if (isMounted) clearUser();
+                }
             } finally {
                 if (isMounted) setIsChecking(false);
             }
         };
 
         verifyAuth();
+        
         return () => { isMounted = false; };
     }, [setUser, clearUser]);
 
-    if (isChecking) {
+    if (isChecking && !isAuthenticated) {
         return <Loader />;
     }
 
@@ -78,7 +92,6 @@ export const RoleGuard = ({ allowedRoles }) => {
             case 'farmer':
                 return <Navigate to="/" replace />;
             default:
-                console.log("[RoleGuard] No valid role found or unauthorized access, redirecting to Role selection.");
                 return <Navigate to="/role" replace />;
         }
     }
@@ -94,13 +107,17 @@ export const PublicRoute = () => {
     const { user } = useUserStore();
 
     if (isAuthenticated) {
-        // If logged in, redirect away from public pages to their respective dashboards
+        // If logged in, redirect away from public pages
+        // Optimization: Use the user's role to pick the right dashboard
         const role = user?.role?.toLowerCase();
         if (role === 'admin') return <Navigate to="/admin-dashboard" replace />;
         if (role === 'buyer') return <Navigate to="/buyer-dashboard" replace />;
-        return <Navigate to="/" replace />;
+        if (role === 'farmer') return <Navigate to="/" replace />;
+        
+        // If they are logged in but have no role yet, send to /role
+        return <Navigate to="/role" replace />;
     }
     
     return <Outlet />;
 };
-
+
