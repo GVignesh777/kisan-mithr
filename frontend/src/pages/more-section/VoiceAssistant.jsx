@@ -1,0 +1,615 @@
+import React, { useState, useEffect, useRef } from 'react';
+import Sidebar from './Sidebar';
+import ChatWindow from '../../components/ChatWindow';
+import InputArea from './InputArea';
+import LanguageSelector from './LanguageSelector';
+import VoiceCharacterSelector from './VoiceCharacterSelector';
+import { Menu } from 'lucide-react';
+
+const VoiceAssistant = () => {
+  const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
+  const [language, setLanguage] = useState('en-IN');
+  const [selectedVoice, setSelectedVoice] = useState('default');
+  const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
+  const [transcript, setTranscript] = useState('');
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Chat Data State
+  const [chats, setChats] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
+
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(window.speechSynthesis);
+  const audioRef = useRef(null);
+  
+  // Refs for Wakeword control to avoid closure staleness
+  const wakeWordListenerRef = useRef(null);
+  const wakeWordActiveRef = useRef(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const TEMP_USER_ID = "69a682c84987830f3e21ef14"; // Live login ID mock
+
+  // Helper to start the wake word listener
+  const startWakeWordListener = () => {
+    if (!wakeWordListenerRef.current) return;
+    wakeWordActiveRef.current = true;
+    try { 
+        wakeWordListenerRef.current.start(); 
+    } catch (e) {
+        // Recognition might already be started, ignore
+    }
+  };
+
+  const stopWakeWordListener = () => {
+    wakeWordActiveRef.current = false;
+    try { wakeWordListenerRef.current?.stop(); } catch(e) {}
+  };
+
+  const handleStopSpeaking = () => {
+    console.log("Stopping assistant speech...");
+    synthRef.current.cancel();
+    if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+    }
+    setAssistantState('idle');
+    // Restart wake word monitoring for hands-free after stopping
+    setTimeout(startWakeWordListener, 500);
+  };
+
+  // Load from MongoDB initially
+  useEffect(() => {
+     fetch(`${process.env.REACT_APP_API_URL}/api/chats/${TEMP_USER_ID}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.chats && data.chats.length > 0) {
+                const formattedChats = data.chats.map(c => ({
+                    ...c,
+                    id: c._id 
+                }));
+                setChats(formattedChats);
+                setActiveChatId(formattedChats[0].id);
+            }
+        })
+        .catch(e => console.error("Failed to load chats from Mongoose db", e));
+  }, []);
+
+  // Init Speech Recognition & Background Wake Word Listener
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    // 1. Setup the Main Command Listener
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = true;
+
+    recognitionRef.current.onresult = (event) => {
+      let finalTrans = '';
+      let interimTrans = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript;
+        else interimTrans += event.results[i][0].transcript;
+      }
+      setTranscript(finalTrans || interimTrans);
+    };
+
+    recognitionRef.current.onstart = async () => {
+       audioChunksRef.current = [];
+       try {
+           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+           mediaRecorderRef.current = new MediaRecorder(stream);
+           mediaRecorderRef.current.ondataavailable = (e) => {
+               if (e.data.size > 0) audioChunksRef.current.push(e.data);
+           };
+           mediaRecorderRef.current.start();
+           console.log("Audio recording started for Whisper...");
+       } catch (err) {
+           console.error("Error starting MediaRecorder:", err);
+       }
+    };
+
+    recognitionRef.current.onend = () => {
+      // Stop media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+          console.log("Audio recording stopped.");
+      }
+
+      setAssistantState((prev) => {
+          if (prev === 'listening') return 'thinking';
+          if (prev === 'idle') startWakeWordListener();
+          return prev;
+      });
+    };
+    
+    recognitionRef.current.onerror = (e) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+      }
+      if (e.error !== 'no-speech') console.error("Speech recognition error", e);
+      setAssistantState('idle');
+      startWakeWordListener();
+    };
+
+    // 2. Setup the Background Wake Word Listener
+    const wakeWordListener = new SpeechRecognition();
+    wakeWordListener.continuous = true;
+    wakeWordListener.interimResults = true;
+    wakeWordListenerRef.current = wakeWordListener;
+
+    wakeWordListener.onresult = (event) => {
+       if (!wakeWordActiveRef.current) return;
+       
+       const currentResultStr = event.results[event.results.length - 1][0].transcript.toLowerCase();
+       
+       if (currentResultStr.includes('hey kisan') || currentResultStr.includes('kisan')) {
+           console.log("Wake word detected:", currentResultStr);
+           stopWakeWordListener();
+           
+           const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+           beep.volume = 0.2;
+           beep.play().catch(e => {});
+           
+           setInputMode('voice');
+           setTranscript('');
+           setAssistantState('listening');
+           
+           setTimeout(() => {
+               try { recognitionRef.current.start(); } catch(e){}
+           }, 300);
+       }
+    };
+
+    wakeWordListener.onend = () => {
+        if (wakeWordActiveRef.current) {
+            try { 
+                setTimeout(() => {
+                    if (wakeWordActiveRef.current) wakeWordListener.start();
+                }, 1000); 
+            } catch (e) {}
+        }
+    };
+
+    if (audioUnlocked) {
+        startWakeWordListener();
+    }
+
+    return () => {
+        wakeWordActiveRef.current = false;
+        try { wakeWordListener.stop(); } catch(e) {}
+        try { recognitionRef.current.stop(); } catch(e) {}
+    }
+
+  }, [audioUnlocked]);
+
+  // Browser Audio & TTS Unlock Mechanism
+  // Browsers block autoplaying Audio and SpeechSynthesis until the user interacts with the document.
+  const unlockAudioContext = () => {
+      // Unlock native TTS
+      if (synthRef.current && synthRef.current.getVoices().length > 0) {
+          const silentUtterance = new SpeechSynthesisUtterance('');
+          silentUtterance.volume = 0;
+          synthRef.current.speak(silentUtterance);
+      }
+      // Unlock HTML5 Audio
+      const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
+      silentAudio.volume = 0;
+      silentAudio.play().catch(() => {});
+      
+      setAudioUnlocked(true);
+  };
+
+  useEffect(() => {
+      if (recognitionRef.current) recognitionRef.current.lang = language;
+  }, [language]);
+
+  // Handle Voice Search Execution Trigger
+  useEffect(() => {
+      if (assistantState === 'thinking') {
+          const processVoiceInput = async () => {
+              // If we have recorded chunks, send to Whisper for robust multi-mixed language support
+              if (audioChunksRef.current.length > 0) {
+                  const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                  const formData = new FormData();
+                  formData.append('audio', audioBlob, 'recording.webm');
+
+                  try {
+                      console.log("Sending audio to Whisper for multi-mixed transcript...");
+                      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transcript`, {
+                          method: 'POST',
+                          body: formData
+                      });
+                      const data = await res.json();
+                      if (data.text) {
+                          console.log("Whisper Transcript:", data.text);
+                          handleSendMessage(data.text);
+                          setTranscript('');
+                          return;
+                      }
+                  } catch (err) {
+                      console.error("Whisper fallback failed:", err);
+                  }
+              }
+
+              // Fallback to browser transcript if Whisper fails or no audio recorded
+              if (transcript.trim() !== '') {
+                  handleSendMessage(transcript.trim());
+                  setTranscript('');
+              } else {
+                  setAssistantState('idle');
+                  startWakeWordListener();
+              }
+          };
+
+          processVoiceInput();
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assistantState]);
+
+  const handleNewChat = () => {
+     const newChat = { id: Date.now().toString(), title: '', messages: [] };
+     setChats([...chats, newChat]);
+     setActiveChatId(newChat.id);
+     
+     // Stop any active speech processing
+     synthRef.current.cancel();
+     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+     setAssistantState('idle');
+  };
+
+  const handleEditChat = async (id, newTitle) => {
+     // Optimistic update
+     setChats(chats.map(c => c.id === id ? { ...c, title: newTitle } : c));
+     // Sync to DB
+     const chatToUpdate = chats.find(c => c.id === id);
+     if (chatToUpdate) {
+         fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ userId: TEMP_USER_ID, chatId: id, title: newTitle, messages: chatToUpdate.messages })
+         }).catch(e => console.log('Error updating title:', e));
+     }
+  };
+
+  const handleDeleteChat = async (id) => {
+     // Optimistically delete
+     const remaining = chats.filter(c => c.id !== id);
+     setChats(remaining);
+     if (activeChatId === id) {
+         setActiveChatId(remaining.length > 0 ? remaining[0].id : null);
+     }
+     
+     // Inform backend
+     try {
+         await fetch(`${process.env.REACT_APP_API_URL}/api/chats/${id}`, { method: 'DELETE' });
+     } catch (e) { console.error('Error deleting chat from DB', e); }
+  };
+
+  const syncChatToMongo = (chatIdToSync, currentChatsState) => {
+      const chatData = currentChatsState.find(c => c.id === chatIdToSync);
+      if (!chatData) return;
+      
+      // Ensure the temp user id is 24 hex characters so Mongoose ObjectId casting doesn't fail
+      // "69a682c84987830f3e21ef14" is 24 chars, which is fine, but in case it changes:
+      const safeUserId = TEMP_USER_ID.length === 24 ? TEMP_USER_ID : "000000000000000000000000";
+
+      // We pass the chatId to the backend (mapped logically from _id or explicitly passed)
+      // The backend will create a new doc if _id isn't found, or update if it exists.
+      fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              userId: safeUserId,
+              chatId: chatIdToSync.length === 24 ? chatIdToSync : null, // only send _id proxy if it's a valid 24 hex char Mongo ID 
+              title: chatData.title || userTextPreviewRef.current,
+              messages: chatData.messages
+          })
+      })
+      .then(res => res.json())
+      .then(data => {
+          // If the backend generated a new MongoDB _id for this new chat, we need to update our frontend state to use that real _id instead of our temporary timestamp ID
+          if (data.chat && data.chat._id && chatIdToSync !== data.chat._id) {
+               chatIdMapRef.current[chatIdToSync] = data.chat._id;
+               setChats(prev => prev.map(c => c.id === chatIdToSync ? { ...c, id: data.chat._id } : c));
+               if (activeChatId === chatIdToSync) setActiveChatId(data.chat._id);
+          }
+      })
+      .catch(e => console.error("Full mongo sync error:", e));
+  };
+  
+  // Track temporary frontend timestamp IDs to real MongoDB ObjectIds asynchronously
+  const chatIdMapRef = useRef({});
+  // Ref strictly for title preview usage to avoid stale state in closure
+  const userTextPreviewRef = useRef('');
+
+  const handleSendMessage = async (userText) => {
+      let currentChatId = activeChatId;
+      userTextPreviewRef.current = userText.length > 30 ? userText.substring(0, 30) + '...' : userText;
+
+      // Create a brand new chat if none exists (Temporary ID before Mongo Sync generates real one)
+      if (!currentChatId || chats.length === 0) {
+          const newId = Date.now().toString();
+          currentChatId = newId;
+          const newChat = { id: newId, title: '', messages: [] };
+          setChats(prev => [...prev, newChat]);
+          setActiveChatId(newId);
+      }
+
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const userMessageObj = { role: 'user', content: userText, timestamp };
+
+      // Update Messages State locally first
+      let updatedChatsPostUser = [];
+      setChats(prevChats => {
+          const newChatsState = prevChats.map(chat => {
+              if (chat.id === currentChatId) {
+                 // Generate Title if it's the very first message
+                 let newTitle = chat.title;
+                 if (!newTitle) {
+                     newTitle = userText.length > 30 ? userText.substring(0, 30) + '...' : userText;
+                 }
+                 return { ...chat, title: newTitle, messages: [...chat.messages, userMessageObj] };
+              }
+              return chat;
+          });
+          updatedChatsPostUser = newChatsState;
+          return newChatsState;
+      });
+
+      // Sync user message to MongoDB
+      setTimeout(() => syncChatToMongo(currentChatId, updatedChatsPostUser), 100);
+
+      setAssistantState('thinking');
+      
+      try {
+          synthRef.current.cancel();
+          if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+
+          const langMap = { 'en-IN': 'English', 'te-IN': 'Telugu', 'hi-IN': 'Hindi' };
+          
+          // Resolve the correct ID for history context
+          const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
+          const isMongoId = syncId.length === 24;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ask-ai`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  message: userText, 
+                  language: langMap[language], 
+                  userId: TEMP_USER_ID,
+                  chatId: isMongoId ? syncId : null // Only pass if it's a real MongoDB ID
+              }),
+              signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+              const errData = await response.json().catch(()=>({}));
+              throw new Error(errData.error || `HTTP Error ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          const aiResponseText = data.response || data.reply || "I am currently unable to process your request. Please try again.";
+          const aiTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const aiMessageObj = { role: 'ai', content: aiResponseText, timestamp: aiTimestamp };
+
+          // Append AI message to the chat
+          let updatedChatsPostAI = [];
+          setChats(prevChats => {
+              // Resolve the target ID in case it was mutated to a Mongo ID by a background sync
+              const targetChatId = chatIdMapRef.current[currentChatId] || currentChatId;
+              
+              const newState = prevChats.map(chat => {
+                  if (chat.id === targetChatId) {
+                     return { ...chat, messages: [...chat.messages, aiMessageObj] };
+                  }
+                  return chat;
+              });
+              updatedChatsPostAI = newState;
+              return newState;
+          });
+
+          // Sync AI response to MongoDB using the correct dynamically resolved ID
+          const finalSyncId = chatIdMapRef.current[currentChatId] || currentChatId;
+          setTimeout(() => syncChatToMongo(finalSyncId, updatedChatsPostAI), 100);
+
+          setAssistantState('speaking');
+          speakText(aiResponseText, language);
+
+      } catch (error) {
+          console.error("AI Fetch Error:", error);
+          const fallbackText = language.includes('te') 
+             ? "క్షమించండి, నా సిస్టమ్‌లో నెట్‌వర్క్ సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నించండి." 
+             : language.includes('hi')
+             ? "क्षमा करें, मेरे नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।"
+             : "I am having trouble connecting to the knowledge base right now. Please try again.";
+             
+          speakText(fallbackText, language);
+          setAssistantState('idle');
+      }
+  };
+
+  const speakText = async (text, lang) => {
+      // Script Detection to ensure correct voice even if UI is in a different language
+      const detectLang = (input) => {
+          if (/[\u0C00-\u0C7F]/.test(input)) return 'te-IN';
+          if (/[\u0900-\u097F]/.test(input)) return 'hi-IN';
+          return null;
+      };
+      
+      const effectiveLang = detectLang(text) || lang;
+
+      try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/speak`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  text: text, 
+                  language: effectiveLang,
+                  voice: selectedVoice 
+              })
+          });
+
+          if (!response.ok) throw new Error("ElevenLabs 402/500");
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+
+          // Play the high quality audio
+          audio.onended = () => { 
+              setAssistantState('idle'); 
+              URL.revokeObjectURL(audioUrl); 
+              setTimeout(startWakeWordListener, 500);
+          };
+          audio.onerror = () => { 
+              setAssistantState('idle'); 
+              setTimeout(startWakeWordListener, 500);
+          };
+          // We must catch the play promise strictly
+          audio.play().catch(err => {
+              console.log("Audio play blocked by browser:", err);
+              setAssistantState('idle'); 
+              setTimeout(startWakeWordListener, 500);
+          });
+          
+      } catch (error) {
+          console.log("ElevenLabs quota exceeded or failed. Falling back to native browser TTS.", error);
+          
+          try {
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = effectiveLang;
+              
+              const voices = window.speechSynthesis.getVoices();
+              
+              if (voices.length === 0) {
+                  console.warn("No TTS voices found, waiting for voiceschanged event...");
+                  window.speechSynthesis.onvoiceschanged = () => {
+                      speakText(text, effectiveLang); // Retry once voices load
+                  };
+                  return;
+              }
+
+              let matchedVoice = voices.find(v => v.lang.includes(effectiveLang) && v.name.includes('Google'));
+              if (!matchedVoice) matchedVoice = voices.find(v => v.lang === effectiveLang || v.lang.replace('_', '-') === effectiveLang);
+              if (!matchedVoice && effectiveLang === 'te-IN') matchedVoice = voices.find(v => v.lang.toLowerCase().includes('te') || v.name.toLowerCase().includes('telugu'));
+              else if (!matchedVoice && effectiveLang === 'hi-IN') matchedVoice = voices.find(v => v.lang.toLowerCase().includes('hi') || v.name.toLowerCase().includes('hindi'));
+
+              if (matchedVoice) utterance.voice = matchedVoice;
+
+              utterance.onend = () => {
+                  setAssistantState('idle');
+                  setTimeout(startWakeWordListener, 500);
+              };
+              utterance.onerror = (e) => {
+                  console.log("SpeechSynthesis error:", e);
+                  setAssistantState('idle');
+                  setTimeout(startWakeWordListener, 500);
+              };
+              
+              synthRef.current.speak(utterance);
+          } catch(fallbackErr) {
+              console.log("Native TTS fallback also failed:", fallbackErr);
+              setAssistantState('idle');
+          }
+      }
+  };
+
+  const handleMicClick = () => {
+    if (assistantState === 'listening') {
+        recognitionRef.current?.stop();
+        setAssistantState('idle');
+    } else {
+        setAssistantState('listening');
+        synthRef.current.cancel();
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+        recognitionRef.current?.start();
+    }
+  };
+
+  const currentChat = activeChatId ? chats.find(c => c.id === activeChatId) : null;
+  
+  // Combine historical messages with the live voice transcript bubble (if active)
+  const displayMessages = currentChat ? [...currentChat.messages] : [];
+  if (transcript) {
+      displayMessages.push({ role: 'user', content: transcript, timestamp: 'Listening...' });
+  }
+
+  return (
+    <div className="flex min-h-screen w-full overflow-hidden text-zinc-100 font-sans antialiased bg-zinc-950 bg-[radial-gradient(circle_at_top_right,#0f361d,#091a0e_40%,#000000_100%)] bg-fixed">
+      
+      {/* INITIALIZATION OVERLAY (Mandatory Click to Unlock Browser Autoplay) */}
+      {!audioUnlocked && (
+          <div onClick={unlockAudioContext} className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 backdrop-blur-md cursor-pointer">
+              <div className="bg-zinc-900 border border-green-500/50 p-8 rounded-2xl shadow-[0_0_50px_rgba(74,222,128,0.2)] text-center max-w-sm animate-pulse">
+                  <span className="text-6xl mb-6 block">🎙️</span>
+                  <h2 className="text-2xl font-bold text-white mb-2">Click to Start</h2>
+                  <p className="text-zinc-400">Click anywhere to enable Kisan Mithr AI's Voice Assistant.</p>
+              </div>
+          </div>
+      )}
+
+      {/* Sidebar - Resizable container implemented inside */}
+      <Sidebar 
+          chats={chats} 
+          activeChatId={activeChatId} 
+          onSelectChat={(id) => { setActiveChatId(id); setIsSidebarOpen(false); }} 
+          onNewChat={() => { handleNewChat(); setIsSidebarOpen(false); }}
+          onDeleteChat={handleDeleteChat}
+          onEditChat={handleEditChat}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+      />
+
+      {/* Main Feature Area */}
+      <div className="flex-1 flex flex-col h-full relative z-10 transition-all">
+         {/* Top Glass Header */}
+         <header className="w-full flex justify-between items-center p-4 border-b border-white/5 bg-black/20 backdrop-blur-md z-40">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 lg:hidden"
+                >
+                    <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest truncate max-w-[150px] sm:max-w-none">Kisan Mithr AI</h1>
+            </div>
+            <div className="flex items-center gap-2">
+                <VoiceCharacterSelector selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
+                <LanguageSelector language={language} setLanguage={setLanguage} />
+            </div>
+         </header>
+
+         {/* Chat Window Body */}
+         <ChatWindow messages={displayMessages} assistantState={assistantState} />
+
+         {/* Footer Input Area */}
+         <footer className="w-full p-4 md:px-8 pb-6 bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent z-40 shrink-0">
+             <InputArea 
+                 onSendMessage={handleSendMessage}
+                 handleMicClick={handleMicClick}
+                 handleStopSpeaking={handleStopSpeaking}
+                 assistantState={assistantState}
+                 inputMode={inputMode}
+                 setInputMode={setInputMode}
+             />
+             <div className="text-center mt-3 text-xs text-zinc-500">
+                 Kisan Mithr AI specializes in Indian agriculture. Answers are generated by AI.
+             </div>
+         </footer>
+      </div>
+
+    </div>
+  );
+};
+
+export default VoiceAssistant;

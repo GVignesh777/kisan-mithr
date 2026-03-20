@@ -1,0 +1,15 @@
+{
+  "name": "kisan-mithr-root",
+  "version": "1.0.0",
+  "description": "Root management for Kisan Mithr",
+  "scripts": {
+    "install-all": "npm install --prefix backend && npm install --prefix frontend",
+    "start-backend": "cd backend && npm start",
+    "start-frontend": "cd frontend && npm start",
+    "dev": "npx concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "build": "npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
