@@ -50,6 +50,7 @@ const googleAuthController = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Login Successfully with Google",
+      token: jwtToken,
       data: user
     });
 

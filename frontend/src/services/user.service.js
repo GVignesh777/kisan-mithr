@@ -102,22 +102,22 @@ export const selectRole = async (role) => {
 export const checkUserAuth = async () => {
   try {
     const response = await axiosInstance.get('/check-auth');
-    console.log(response)
-    if (response.data.status === 'success' || response?.data?.status === 'success') {
-      // console.log(response)
-      return { isAuthenticated: true, user: response?.data?.data }
+    if (response?.data?.status === 'success') {
+      return { isAuthenticated: true, user: response.data.data };
     }
-    else if (response.data === 'error') {
-      return { isAuthenticated: false }
-    }
+    return { isAuthenticated: false };
   } catch (error) {
-    throw error.response ? error.response.data : error.message;
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      return { isAuthenticated: false };
+    }
+    throw error;
   }
 }
 
 
 export const logoutUser = async () => {
     try {
+        localStorage.removeItem("auth_token"); // Clear token
         const response = await axiosInstance.get('/logout');
         return response.data;
     } catch (error) {

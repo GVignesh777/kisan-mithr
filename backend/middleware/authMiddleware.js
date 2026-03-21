@@ -3,10 +3,12 @@ const jwt = require("jsonwebtoken");
 
 
 const authMiddleware = (req, res, next) => {
-    const authToken = req.cookies?.auth_token;
-    console.log("auth_token askdj", authToken);
-    console.log("Cookies:", req.cookies);
-    console.log("authToken is", authToken)
+    let authToken = req.cookies?.auth_token;
+    
+    // Fallback to Authorization header if cookie is missing
+    if (!authToken && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        authToken = req.headers.authorization.split(' ')[1];
+    }
 
     if(!authToken) {
         return response(res, 401, "authorization token missing. please provide token");
@@ -14,10 +16,9 @@ const authMiddleware = (req, res, next) => {
     try {
         const decode = jwt.verify(authToken, process.env.JWT_SECRET);
         req.user = decode;
-        // console.log(req.user);
         next();
     } catch (error) {
-        console.error(error);
+        console.error("JWT Verification Error:", error.message);
         return response(res, 401, "Invalid or expired token");
     }
 }

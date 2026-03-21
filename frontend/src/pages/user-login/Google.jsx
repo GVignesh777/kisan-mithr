@@ -41,6 +41,8 @@ const Google = () => {
       if (response.status === "success") {
         console.log("User saved to database:", response.data);
         console.log("Login Response:", response);  
+        
+        localStorage.setItem("auth_token", response.token); // Save token
         toast.success("Logged in successfully with Google");
         setUser(response.data);
         navigate("/");

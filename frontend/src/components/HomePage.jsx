@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Role from "./Role";
 import Header from "./header/Header";
 import heroBG from "../assets/hero-bg.jpg";
 import useTranslation from "../hooks/useTranslation";
@@ -10,7 +9,6 @@ import { toast } from "react-toastify";
 import useUserStore from "../store/useUserStore";
 
 const HomePage = () => {
-  const [showProfile, setShowProfile] = useState(false);  
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -149,7 +147,8 @@ const HomePage = () => {
               title: t("cropHealthPests"),
               desc: t("cropHealthDesc"),
               icon: <Leaf className="w-8 h-8 text-lime-400" />,
-              link: "/crop-health",
+              // link: "/crop-health",
+              link: "/pest-detect",
             },
             {
               title: "NASA Health Cockpit",

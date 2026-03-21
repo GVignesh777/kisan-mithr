@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import logoW from "../../assets/logo-w.png";
 import * as yup from "yup";
-import { FaEye, FaEyeSlash, FaArrowLeft, FaPlus, FaUser } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUser, FaArrowLeft, FaPlus } from "react-icons/fa";
 import avatars from "../../utils/avatars";
 import { useNavigate } from "react-router-dom";
 import Google from "./Google";
@@ -124,9 +124,9 @@ const Login = () => {
         userName = response?.user?.username;
         if (response?.status === true) {
           toast.success(`Successfully Logged in ${userName}`);
-          setUserPhoneData({ email });
-          // setStep(2);
-
+          localStorage.setItem("auth_token", response.token); // Save token
+          setUser(response.user); // Update store
+          
           navigate("/role");
           resetLoginState();
         } else {
@@ -151,7 +151,9 @@ const Login = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error?.message || "Otp failed to send 🚨");
+      const errMessage = typeof error === 'string' ? error : error?.message;
+      const fallbackMessage = isLogin ? "Login failed 🚨" : "Otp failed to send 🚨";
+      toast.error(errMessage || fallbackMessage);
     } finally {
       setLoading(false);
     }
@@ -177,6 +179,10 @@ const Login = () => {
       if (response.status === "success") {
         toast.success("OTP verified successfully");
         const user = response.data?.user;
+        const token = response.data?.token;
+        
+        localStorage.setItem("auth_token", token); // Save token
+        
         if (user.username && user?.profilePicture) {
           setUser(user);
           toast.success("Welcome back...");
@@ -299,19 +305,29 @@ const Login = () => {
       </div>
 
       {/* Right Side - Form Container */}
-      <div className="w-full lg:w-[55%] flex flex-col justify-center p-8 lg:p-16 relative bg-transparent z-10">
-        <header className="absolute top-6 right-6 lg:top-8 lg:right-8">
+      <div className="w-full lg:w-[55%] flex flex-col items-center justify-center p-4 sm:p-8 lg:p-16 relative bg-transparent z-10 min-h-[100dvh]">
+        <header className="absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 z-50">
           <LanguageSwitcher />
         </header>
 
-        <div className="w-full max-w-md mx-auto">
+        {/* Brand Header for Mobile Only */}
+        <div className="flex lg:hidden flex-col items-center justify-center mb-8 mt-16 sm:mt-12 animate-fadeIn">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mb-4 bg-white/5 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/10">
+            <img className="w-full h-full object-contain filter drop-shadow-md" src={logoW} alt="Kisan Mithr Logo" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
+            {t("kisanMithr")}
+          </h1>
+        </div>
+
+        <div className="w-full max-w-lg w-full bg-zinc-900/40 backdrop-blur-2xl border border-white/10 p-6 sm:p-10 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-500 mx-auto">
         {step === 1 && (
           <div className="flex flex-col animate-fadeIn">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight">
                 {isLogin ? t("welcomeBack") : t("createaccount")}
               </h2>
-              <p className="text-zinc-400 font-medium">
+              <p className="text-zinc-400 font-medium text-sm sm:text-base">
                 {isLogin
                   ? t("signintoaccess")
                   : t("jointhousandsoffarmersusingsmartagriculture")}
@@ -336,7 +352,7 @@ const Login = () => {
                       {...loginRegister("username")}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-5 py-3.5 pl-11 bg-zinc-900 border border-zinc-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner"
+                      className="w-full px-5 py-3.5 pl-11 bg-zinc-800/40 backdrop-blur-sm border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:bg-zinc-800/80 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner hover:bg-zinc-800/60"
                     />
                   </div>
                 )}
@@ -352,7 +368,7 @@ const Login = () => {
                     {...loginRegister("email")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-5 py-3.5 pl-11 bg-zinc-900 border border-zinc-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner"
+                    className="w-full px-5 py-3.5 pl-11 bg-zinc-800/40 backdrop-blur-sm border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:bg-zinc-800/80 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner hover:bg-zinc-800/60"
                   />
                 </div>
                 {/* Password Input Box */}
@@ -365,7 +381,7 @@ const Login = () => {
                     placeholder={t("password")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-5 py-3.5 pl-11 bg-zinc-900 border border-zinc-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner"
+                    className="w-full px-5 py-3.5 pl-11 bg-zinc-800/40 backdrop-blur-sm border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:bg-zinc-800/80 transition-all font-medium placeholder:text-zinc-500 placeholder:font-normal shadow-inner hover:bg-zinc-800/60"
                   />
                   <div
                     onClick={() => setShowPassword(!showPassword)}
@@ -389,7 +405,7 @@ const Login = () => {
                 <div className="w-full pt-4">
                   <button
                     type="submit"
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-600 hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] transition-all ease-in-out duration-300 transform hover:-translate-y-0.5"
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-4 rounded-xl hover:from-emerald-400 hover:to-teal-400 hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.6)] transition-all ease-in-out duration-300 transform hover:-translate-y-1"
                   >
                     {loading ? (
                       <Spinner />
@@ -478,7 +494,7 @@ const Login = () => {
                         ref={(el) => {
                           inputsRef.current[index] = el;
                         }}
-                        className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-bold bg-zinc-900 border border-zinc-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 shadow-inner transition-all ${
+                        className={`w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold bg-zinc-800/50 backdrop-blur-sm border border-white/10 text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 shadow-inner transition-all hover:bg-zinc-800/80 ${
                           otpErrors.otp ? "border-red-500 focus:ring-red-500/50" : ""
                         }`}
                       />
@@ -488,7 +504,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold text-lg rounded-xl cursor-pointer hover:from-emerald-600 hover:to-green-600 shadow-lg hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] transition-all ease-in-out duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg rounded-xl cursor-pointer hover:from-emerald-400 hover:to-teal-400 shadow-lg hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.6)] transition-all ease-in-out duration-300 transform hover:-translate-y-1 disabled:opacity-70 flex items-center justify-center gap-2"
                     >
                       {loading ? <Spinner /> : <span>Verify OTP</span>}
                     </button>
@@ -497,7 +513,7 @@ const Login = () => {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="w-full flex items-center justify-center py-3 bg-zinc-900 text-zinc-300 font-bold text-lg rounded-xl border-2 border-zinc-800 cursor-pointer hover:bg-zinc-800 hover:text-white transition-all duration-300"
+                      className="w-full flex items-center justify-center py-4 bg-zinc-800/40 text-zinc-300 font-bold text-lg rounded-xl border border-white/10 cursor-pointer hover:bg-zinc-700/50 hover:text-white transition-all duration-300 backdrop-blur-sm"
                     >
                       <span className="flex items-center justify-center gap-2">
                         <FaArrowLeft size={16}/> Back to Login
@@ -511,9 +527,9 @@ const Login = () => {
 
           {step === 3 && (
             <div className="flex flex-col animate-fadeIn">
-              <div className="text-center mb-6">
-                 <h2 className="text-3xl font-bold text-zinc-900 mb-2">Complete Profile</h2>
-                 <p className="text-zinc-500 font-medium">Almost there! Setup your identity.</p>
+              <div className="text-center mb-8">
+                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight">Complete Profile</h2>
+                 <p className="text-zinc-400 font-medium text-sm sm:text-base">Almost there! Setup your identity.</p>
               </div>
             <form
               onSubmit={handleProfileSubmit(onProfileSubmit)}
@@ -564,7 +580,7 @@ const Login = () => {
                   {...profileRegister("username")}
                   type="text"
                   placeholder="Choose a Username"
-                  className="w-full px-5 py-3.5 pl-11 bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all font-medium placeholder:text-zinc-400"
+                  className="w-full px-5 py-3.5 pl-11 bg-zinc-800/40 backdrop-blur-sm border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:bg-zinc-800/80 transition-all font-medium placeholder:text-zinc-400 hover:bg-zinc-800/60"
                 />
 
                 {profileErrors.username && (
@@ -574,7 +590,7 @@ const Login = () => {
                 )}
               </div>
 
-              <div className="flex w-full items-start space-x-3 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
+              <div className="flex w-full items-start space-x-3 bg-zinc-800/30 p-5 rounded-xl border border-white/10 backdrop-blur-sm">
                 <div className="mt-1">
                   <input
                     {...profileRegister("agreed")}
@@ -603,8 +619,8 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={!watch("agreed") || loading}
-                className={`w-full py-4 mt-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold text-lg rounded-xl shadow-lg transition-all duration-300 ease-in-out transform flex items-center justify-center tracking-wide
-                ${loading || !watch("agreed") ? "opacity-60 cursor-not-allowed" : "hover:from-emerald-600 hover:to-green-600 hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] hover:-translate-y-1"}
+                className={`w-full py-4 mt-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg rounded-xl shadow-lg transition-all duration-300 ease-in-out transform flex items-center justify-center tracking-wide
+                ${loading || !watch("agreed") ? "opacity-60 cursor-not-allowed" : "hover:from-emerald-400 hover:to-teal-400 hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.6)] hover:-translate-y-1"}
                 `}
               >
                 {loading ? <Spinner /> : "Complete Setup & Enter"}

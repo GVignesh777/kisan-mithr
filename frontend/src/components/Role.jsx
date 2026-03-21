@@ -4,7 +4,7 @@ import farmerImg from "../assets/farmer.png";
 import buyerImg from "../assets/buyer.png";
 import adminImg from "../assets/admin.png";
 import { toast } from "react-toastify";
-import { checkUserAuth, selectRole } from "../services/user.service";
+import { selectRole } from "../services/user.service";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "../store/useUserStore";
 

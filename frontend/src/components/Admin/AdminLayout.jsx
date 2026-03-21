@@ -15,7 +15,6 @@ import {
   Menu,
   X,
   LogOut,
-  Settings,
   Bot
 } from 'lucide-react';
 import { toast } from 'react-toastify';

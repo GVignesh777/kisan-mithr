@@ -98,17 +98,27 @@ const ForgotPasswordHTML = () => {
         </div>
 
         {/* Right Side - Form Container */}
-        <div className="w-full lg:w-[55%] flex flex-col justify-center p-8 lg:p-16 relative bg-transparent z-10">
-          <div className="w-full max-w-md mx-auto flex flex-col animate-fadeIn">
+        <div className="w-full lg:w-[55%] flex flex-col items-center justify-center p-4 sm:p-8 lg:p-16 relative bg-transparent z-10 min-h-[100dvh]">
+          {/* Brand Header for Mobile Only */}
+          <div className="flex lg:hidden flex-col items-center justify-center mb-8 mt-16 sm:mt-12 animate-fadeIn">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mb-4 bg-white/5 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/10">
+              <img className="w-full h-full object-contain filter drop-shadow-md" src={logoW} alt="Kisan Mithr Logo" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
+              Kisan Mithr
+            </h1>
+          </div>
+
+          <div className="w-full max-w-lg bg-zinc-900/40 backdrop-blur-2xl border border-white/10 p-6 sm:p-10 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-500 mx-auto flex flex-col animate-fadeIn">
             
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-emerald-900/40 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-3">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight">
                 Forgot Your Password?
               </h2>
-              <p className="text-zinc-400 font-medium">
+              <p className="text-zinc-400 font-medium text-sm sm:text-base">
                 Enter your registered email address and we’ll send you a reset link to get back into your account.
               </p>
             </div>
@@ -128,7 +138,7 @@ const ForgotPasswordHTML = () => {
                   {...loginRegister("email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-5 py-3.5 pl-11 bg-zinc-900 border border-zinc-800 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium placeholder:text-zinc-500 shadow-inner"
+                  className="w-full px-5 py-3.5 pl-11 bg-zinc-800/40 backdrop-blur-sm border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/60 focus:bg-zinc-800/80 transition-all font-medium placeholder:text-zinc-500 shadow-inner hover:bg-zinc-800/60"
                 />
               </div>
 
@@ -136,7 +146,7 @@ const ForgotPasswordHTML = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-600 shadow-lg hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] transition-all ease-in-out duration-300 transform hover:-translate-y-0.5 disabled:opacity-70"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-4 rounded-xl hover:from-emerald-400 hover:to-teal-400 shadow-lg hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.6)] transition-all ease-in-out duration-300 transform hover:-translate-y-1 disabled:opacity-70"
                 >
                   {loading ? <Spinner /> : <span>Send Reset Link</span>}
                 </button>
@@ -146,7 +156,7 @@ const ForgotPasswordHTML = () => {
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="w-full flex items-center justify-center py-3.5 bg-zinc-900 text-zinc-300 font-bold text-lg rounded-xl border-2 border-zinc-800 cursor-pointer hover:bg-zinc-800 hover:text-white transition-all duration-300"
+                  className="w-full flex items-center justify-center py-4 bg-zinc-800/40 text-zinc-300 font-bold text-lg rounded-xl border border-white/10 cursor-pointer hover:bg-zinc-700/50 hover:text-white transition-all duration-300 backdrop-blur-sm"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                   Back to Login

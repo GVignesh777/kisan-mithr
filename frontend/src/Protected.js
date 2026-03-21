@@ -12,11 +12,25 @@ import Loader from "./utils/loader";
 export const ProtectedRoute = () => {
     const location = useLocation();
     const { isAuthenticated, user, setUser, clearUser } = useUserStore();
-    // Only check if we are NOT already authenticated in the local store
-    // This avoids the loader-loop for users who just logged in.
-    const [isChecking, setIsChecking] = useState(!isAuthenticated);
 
     useEffect(() => {
+        // If already authenticated, skip the server round-trip entirely.
+        // This prevents race conditions after login.
+        if (isAuthenticated) {
+            setIsChecking(false);
+            return;
+        }
+
+        // We are NOT authenticated locally. Check if we have a token in storage.
+        const hasToken = !!localStorage.getItem('auth_token');
+        if (!hasToken) {
+            // No token at all — immediately mark as done (will redirect to login).
+            setIsChecking(false);
+            return;
+        }
+
+        // We have a token but store says not authenticated (e.g. page was hard-refreshed
+        // but persist failed). Try to verify against the server.
         let isMounted = true;
         
         const verifyAuth = async () => {
@@ -26,22 +40,12 @@ export const ProtectedRoute = () => {
                     if (result?.isAuthenticated) {
                         setUser(result.user);
                     } else {
-                        // Only clear user if there's no local token either.
-                        // This prevents wiping out a freshly-logged-in user if the
-                        // background check fails or returns stale data.
-                        const hasToken = !!localStorage.getItem('auth_token');
-                        if (!hasToken) {
-                            clearUser();
-                        }
+                        clearUser();
                     }
                 }
             } catch (error) {
                 console.error("Auth verification failed:", error);
-                // Only force-logout on explicit unauthorized responses AND no local token
-                const hasToken = !!localStorage.getItem('auth_token');
-                if (!hasToken && (error?.response?.status === 401 || error?.response?.status === 403)) {
-                    if (isMounted) clearUser();
-                }
+                if (isMounted) clearUser();
             } finally {
                 if (isMounted) setIsChecking(false);
             }
@@ -50,7 +54,8 @@ export const ProtectedRoute = () => {
         verifyAuth();
         
         return () => { isMounted = false; };
-    }, [setUser, clearUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);  // Run only once on mount — we don't want re-runs on store changes
 
     if (isChecking && !isAuthenticated) {
         return <Loader />;
@@ -76,14 +81,12 @@ export const RoleGuard = ({ allowedRoles }) => {
     const { user } = useUserStore();
     const userRole = useMemo(() => user?.role?.toLowerCase(), [user?.role]);
 
-    // If role is missing, ProtectedRoute should have caught it, but we guard here too.
     if (!userRole) {
         return <Navigate to="/role" replace />;
     }
 
     if (!allowedRoles.includes(userRole)) {
         console.warn(`[RoleGuard] Access Denied. User: ${user?.username}, Role: "${userRole}", Required: [${allowedRoles}]`);
-        // Redirect unauthorized users to their respective dashboards
         switch (userRole) {
             case 'admin':
                 return <Navigate to="/admin-dashboard" replace />;
@@ -107,17 +110,12 @@ export const PublicRoute = () => {
     const { user } = useUserStore();
 
     if (isAuthenticated) {
-        // If logged in, redirect away from public pages
-        // Optimization: Use the user's role to pick the right dashboard
+        // If logged in, redirect away from public pages to their respective dashboards
         const role = user?.role?.toLowerCase();
         if (role === 'admin') return <Navigate to="/admin-dashboard" replace />;
         if (role === 'buyer') return <Navigate to="/buyer-dashboard" replace />;
-        if (role === 'farmer') return <Navigate to="/" replace />;
-        
-        // If they are logged in but have no role yet, send to /role
-        return <Navigate to="/role" replace />;
+        return <Navigate to="/" replace />;
     }
     
     return <Outlet />;
 };
-
