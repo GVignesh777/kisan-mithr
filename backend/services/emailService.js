@@ -1,67 +1,73 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require('resend');
 const dotenv = require("dotenv");
 const otpTemplate = require("../templates/otpTemplate");
 const forgotPassword = require("../templates/forgotPassTemplate");
+const welcomeTemplate = require("../templates/welcomeTemplate");
 dotenv.config();
 
-// ----------------------
-// Email Transporter
-// ----------------------
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '',
-    },
-    port: 587,
-    secure: false,
-    requireTLS: true, // 🔒 ensures encryption
-    family: 4, // 🔥 MUST be here
-    connectionTimeout: 10000,
-    greetingTimeout: 5000,
-    socketTimeout: 15000,
-});
+// Initialize Resend with the API Key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-transporter.verify((error, success) => {
-    if (error) {
-        console.log("Gmail services connection failed");
-    } else {
-        console.log('Gmail configured properly and ready to send email');
+const SENDER_EMAIL = "Kisan Mithr <kisanmithr3377@gmail.com>";
+
+// Core reusable email function
+const sendEmail = async (to, subject, htmlContent) => {
+    try {
+        const data = await resend.emails.send({
+            from: SENDER_EMAIL,
+            to: to,
+            subject: subject,
+            html: htmlContent,
+        });
+
+        if (data.error) {
+            console.error("Resend API Error details:", data.error);
+            throw new Error(data.error.message);
+        }
+
+        console.log(`✅ Email sent successfully to ${to}`);
+        return data;
+    } catch (error) {
+        console.error("❌ Failed to send email via Resend:", error.message || error);
+        throw error; // Let the caller decide how to handle the error
     }
-});
+}
 
-// send otp to email
+// ----------------------------------------
+// specific email service wrappers
+// ----------------------------------------
 
 const sendOtpToEmail = async (email, otp) => {
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Your Kisan Mithr OTP Code",
-        html: otpTemplate(otp),
-    };
-    await transporter.sendMail(mailOptions);
-    // console.log(`✅ Email OTP sent to ${email}`);
-    console.log(otp);
+    const subject = "Your Kisan Mithr OTP Code";
+    const html = otpTemplate(otp);
+    await sendEmail(email, subject, html);
+    console.log("OTP generated:", otp);
 }
-
-// send forgot password email
 
 const forgotPasswordEmail = async (email, resetURL) => {
-    const mailOptionsForgotPass = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Password Reset Request",
-        html: forgotPassword(resetURL),
-    }
-
-    await transporter.sendMail(mailOptionsForgotPass);
-    console.log("token", resetURL);
-    // res.status(200).json({
-    //     success: true,
-    //     message: "If an account exists, reset link has been sent to email",
-    // });
+    const subject = "Password Reset Request - Kisan Mithr";
+    const html = forgotPassword(resetURL);
+    await sendEmail(email, subject, html);
+    console.log("Password reset token generated:", resetURL);
 }
+
+const sendWelcomeEmail = async (email, username) => {
+    const subject = "Welcome to Kisan Mithr! 🌱";
+    const html = welcomeTemplate(username);
+    // Notice we do NOT throw here so controller can gracefully fail
+    try {
+        await sendEmail(email, subject, html);
+    } catch (err) {
+        console.error(`Warning: Welcome email failed for ${email}`);
+    }
+}
+
+module.exports = {
+    sendOtpToEmail,
+    forgotPasswordEmail,
+    sendWelcomeEmail,
+    sendEmail // export the generic function for reuse
+};
 
 
 module.exports = {
