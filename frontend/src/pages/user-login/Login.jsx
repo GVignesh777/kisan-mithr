@@ -16,7 +16,7 @@ import {
 } from "../../services/user.service";
 import { toast } from "react-toastify";
 import Spinner from "../../utils/spinner";
-import { sendWelcomeEmail } from "../../utils/sendEmail";
+import { sendEmail } from "../../utils/sendEmail";
 import useUserStore from "../../store/useUserStore";
 import ForgotPasswordHTML from "./ForgotPass";
 import LanguageSwitcher from "../more-section/LanguageSwitcher";
@@ -152,9 +152,13 @@ const Login = () => {
         }
 
         const response = await registerUser(username, email, password);
-        if (response?.status === "success") {
+        if (response?.status === "success" || response?.status === true) {
           console.log(response.user);
-          toast.success("OTP is send to your Email");
+          // Dev Fallback: Since backend SMTP is completely removed and EmailJS only has 1 template 
+          // (Welcome Email), we print the OTP to the UI so you aren't permanently locked out of registration!
+          const otpCode = response?.data?.otp || response?.otp;
+          toast.success(`OTP generated (Dev Only): ${otpCode}`);
+          
           setUserPhoneData({ username, email });
           setStep(2);
         } else {
@@ -250,7 +254,7 @@ const Login = () => {
 
       // ✅ Gracefully trigger Welcome Email from the Frontend
       if (userPhoneData?.email) {
-          sendWelcomeEmail({
+          sendEmail({
               username: data.username,
               email: userPhoneData.email
           }); // We purposefully don't "await" so UI doesn't freeze
