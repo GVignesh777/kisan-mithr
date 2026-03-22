@@ -13,6 +13,9 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '',
     },
+    port: 587,
+    secure: false,
+    requireTLS: true, // 🔒 ensures encryption
     connectionTimeout: 10000,
     greetingTimeout: 5000,
     socketTimeout: 15000,
