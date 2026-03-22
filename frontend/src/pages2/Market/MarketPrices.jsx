@@ -65,6 +65,18 @@ const MarketPrices = () => {
         return matchesSearch && matchesState && matchesDistrict && matchesMarket;
     });
 
+    if (isLoading) {
+        return (
+            <div className="flex-1 p-8 text-white h-screen bg-zinc-950 flex flex-col items-center justify-center w-full">
+                <div className="w-16 h-16 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin mb-6 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]"></div>
+                <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-400 mb-2">
+                    {t("liveMarketPrices") || "Loading Live Prices"}
+                </h2>
+                <p className="text-zinc-500 animate-pulse text-lg tracking-wide">{t("fetchingMandi") || "Fetching real-time mandi data..."}</p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex-1 p-4 md:p-8 text-white h-screen bg-zinc-950 overflow-y-auto w-full">
             <div className="max-w-6xl mx-auto space-y-6">
