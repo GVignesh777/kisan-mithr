@@ -88,11 +88,8 @@ export const googleLogin = async (token) => {
 export const selectRole = async (role) => {
   try {
     const response = await axiosInstance.post('/selectRole', { role });
-    if(response.data.status === 'success' || response?.data?.status === 'success') {
-      
     console.log("triggering select role...");
     return response.data;
-    }
   } 
   catch (error) {
     throw error.response ? error.response.data : error.message;

@@ -18,13 +18,6 @@ const registerUser = async (req, res) => {
             return response(res, 400, "All fields are required");
         }
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-
-        if (existingUser) {
-            return response(res, 400, "User already exists");
-        }
-
         // Generate OTP
         const otp = otpGenerate();
         const expiry = new Date(Date.now() + 5 * 60 * 1000);
@@ -32,17 +25,32 @@ const registerUser = async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user with FULL DATA
-        const user = new User({
-            username,
-            email,
-            password: hashedPassword,
-            emailOtp: otp,
-            emailOtpExpiry: expiry,
-            isVerified: false,
-        });
+        // Check if user already exists
+        let user = await User.findOne({ email });
 
-        await user.save();
+        if (user) {
+            if (user.isVerified) {
+                return response(res, 400, "User already exists");
+            } else {
+                // User exists but unverified. Update details and resend OTP.
+                user.username = username;
+                user.password = hashedPassword;
+                user.emailOtp = otp;
+                user.emailOtpExpiry = expiry;
+                await user.save();
+            }
+        } else {
+            // Create user with FULL DATA
+            user = new User({
+                username,
+                email,
+                password: hashedPassword,
+                emailOtp: otp,
+                emailOtpExpiry: expiry,
+                isVerified: false,
+            });
+            await user.save();
+        }
 
         // Send OTP
         await sendOtpToEmail(email, otp);

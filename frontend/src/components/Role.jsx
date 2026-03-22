@@ -77,7 +77,8 @@ const RoleCard = ({ role }) => {
       console.log(`Selecting role: ${role.id}`);
       const response = await selectRole(role.id);
       
-      if (response.status === "success") {
+      // Handle the different possible shapes of a successful backend response
+      if (response && (response.status === "success" || response.success === true || response.message)) {
         toast.success(`Welcome aboard, ${role.title}!`);
         
         // Manually update the role in the store to avoid race conditions with checkUserAuth
@@ -93,7 +94,7 @@ const RoleCard = ({ role }) => {
           navigate("/");
         }
       } else {
-        toast.error("Role selection failed. Please try again.");
+        toast.error(response?.message || "Role selection failed. Please try again.");
       }
     } catch (error) {
       console.error("Role Selection Error:", error);
