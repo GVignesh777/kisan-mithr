@@ -74,6 +74,13 @@ const RoleCard = ({ role }) => {
   const submitRoleSelection = async () => {
     try {
       setLoading(true);
+
+      // SECURITY PATCH: Redirect directly to admin login, DO NOT grant 'admin' role via standard user API!
+      if (role.id === "admin") {
+        navigate("/admin-login");
+        return;
+      }
+
       console.log(`Selecting role: ${role.id}`);
       const response = await selectRole(role.id);
       
@@ -86,9 +93,7 @@ const RoleCard = ({ role }) => {
         setUser({ ...currentUser, role: role.id });
 
         // Redirect based on role
-        if (role.id === 'admin') {
-          navigate("/admin-dashboard");
-        } else if (role.id === 'buyer') {
+        if (role.id === 'buyer') {
           navigate("/buyer-dashboard");
         } else {
           navigate("/");

@@ -81,7 +81,7 @@ const AdminLayout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminDetails');
     toast.info('Logged out from Admin Portal');
-    navigate('/admin-login');
+    navigate('/user-login'); // Explicitly requested by user
   };
 
   const handleNotificationClick = async () => {
