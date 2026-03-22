@@ -64,7 +64,7 @@ const DropdownProfile = () => {
   };
 
   return (
-    <div className="absolute right-3 top-16 w-[320px] bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-[0_10px_40px_-5px_rgba(0,0,0,0.5)] rounded-2xl p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top translate-y-2 group-hover:translate-y-0">
+    <div className="fixed sm:absolute left-1/2 sm:left-auto right-auto sm:right-3 top-20 sm:top-16 -translate-x-1/2 sm:translate-x-0 w-[300px] sm:w-[320px] bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-[0_10px_40px_-5px_rgba(0,0,0,0.5)] rounded-2xl p-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top translate-y-2 group-hover:translate-y-0">
       {/* User Info Section */}
       <div className="flex items-center gap-4 border-b border-zinc-800/60 pb-4 mb-4">
         <div className="w-12 h-12 bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center rounded-full font-bold text-lg overflow-hidden flex-shrink-0">

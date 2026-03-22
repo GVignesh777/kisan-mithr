@@ -83,7 +83,7 @@ const VoiceAssistant = () => {
 
     // 1. Setup the Main Command Listener
     recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
+    recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
 
     recognitionRef.current.onresult = (event) => {
@@ -527,7 +527,6 @@ const VoiceAssistant = () => {
   const handleMicClick = () => {
     if (assistantState === 'listening') {
         recognitionRef.current?.stop();
-        setAssistantState('idle');
     } else {
         setAssistantState('listening');
         synthRef.current.cancel();
@@ -545,7 +544,7 @@ const VoiceAssistant = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden text-zinc-100 font-sans antialiased bg-zinc-950 bg-[radial-gradient(circle_at_top_right,#0f361d,#091a0e_40%,#000000_100%)] bg-fixed">
+    <div className="flex h-[100dvh] w-full overflow-hidden text-zinc-100 font-sans antialiased bg-zinc-950 bg-[radial-gradient(circle_at_top_right,#0f361d,#091a0e_40%,#000000_100%)] bg-fixed">
       
       {/* INITIALIZATION OVERLAY (Mandatory Click to Unlock Browser Autoplay) */}
       {!audioUnlocked && (

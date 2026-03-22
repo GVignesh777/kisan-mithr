@@ -61,7 +61,7 @@ const HomePage = () => {
     <div className="bg-zinc-950 min-h-screen font-sans selection:bg-green-500/30">
       
       {/* Hero Section */}
-      <div className="relative h-screen w-full flex flex-col justify-center overflow-hidden">
+      <div className="relative h-[100dvh] w-full flex flex-col justify-center overflow-hidden">
         
         {/* Background Image with Parallax & Darkening Overlay */}
         <div 
