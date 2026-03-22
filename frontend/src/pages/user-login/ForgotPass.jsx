@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { forgotUserPassword } from "../../services/user.service";
 import Spinner from "../../utils/spinner";
+import { sendEmail } from "../../utils/sendEmail";
 
 const loginValidationSchema = yup
   .object()
@@ -50,7 +51,20 @@ const ForgotPasswordHTML = () => {
       }
       const response = await forgotUserPassword(email);
 
-      if (response?.status === "success") {
+      if (response?.status === "success" || response?.success) {
+        
+        // Extract resetURL directly from new backend controller signature
+        const resetLink = response?.resetURL || response?.data?.resetURL;
+        
+        if (resetLink) {
+            sendEmail({
+                email: email,
+                reset_link: resetLink
+            }, 'FORGOT_PASSWORD');
+        } else {
+            console.warn("Failed to retrieve reset URL from API");
+        }
+
         toast.success(`Successfully sent Reset Link`);
       } else {
         toast.error(response?.message || "Reset Link failed to send");

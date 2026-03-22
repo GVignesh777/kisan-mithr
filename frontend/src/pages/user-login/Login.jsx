@@ -154,11 +154,17 @@ const Login = () => {
         const response = await registerUser(username, email, password);
         if (response?.status === "success" || response?.status === true) {
           console.log(response.user);
-          // Dev Fallback: Since backend SMTP is completely removed and EmailJS only has 1 template 
-          // (Welcome Email), we print the OTP to the UI so you aren't permanently locked out of registration!
-          const otpCode = response?.data?.otp || response?.otp;
-          toast.success(`OTP generated (Dev Only): ${otpCode}`);
           
+          const otpCode = response?.data?.otp || response?.otp;
+          if (otpCode) {
+              sendEmail({
+                  username: username,
+                  email: email,
+                  otp_code: otpCode
+              }, 'OTP');
+          }
+
+          toast.success("OTP is sent to your Email");
           setUserPhoneData({ username, email });
           setStep(2);
         } else {
@@ -251,14 +257,6 @@ const Login = () => {
       }
 
       await updateUserProfile(formData);
-
-      // ✅ Gracefully trigger Welcome Email from the Frontend
-      if (userPhoneData?.email) {
-          sendEmail({
-              username: data.username,
-              email: userPhoneData.email
-          }); // We purposefully don't "await" so UI doesn't freeze
-      }
 
       toast.success(`Welcome back, ${data.username}`);
       navigate("/role");

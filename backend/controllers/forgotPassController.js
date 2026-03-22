@@ -3,7 +3,6 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
-const { forgotPasswordEmail } = require("../services/emailService");
 dotenv.config();
 
 
@@ -51,38 +50,10 @@ const forgotPassword = async (req, res) => {
         // Create reset URL (change frontend URL if deployed)
         const resetURL = `http://localhost:3000/resetPassword/${resetToken}`;
 
-        await forgotPasswordEmail(user.email, resetURL);
-
-
-
-        // Setup mail transporter
-        // const transporter = nodemailer.createTransport({
-        //     service: "gmail",
-        //     auth: {
-        //         user: process.env.EMAIL_USER,
-        //         pass: process.env.EMAIL_PASS,
-        //     },
-        // });
-
-        // const message = `
-        //   <h3>Password Reset Request</h3>
-        //   <p>You requested to reset your password.</p>
-        //   <p>Click the link below to reset your password:</p>
-        //   <a href="${resetURL}" target="_blank">${resetURL}</a>
-        //   <p>This link will expire in 15 minutes.</p>
-        // `;
-
-        // const mailOptionsForgotPass = {
-        //     from: process.env.EMAIL_USER,
-        //     to: user.email,
-        //     subject: "Password Reset Request",
-        //     html: forgotPassword(user.username, resetURL, resetURL),
-        // }
-
-        // await transporter.sendMail(mailOptionsForgotPass);
-
+        // Setup complete - pass payload back to frontend for EmailJS dispatch
         res.status(200).json({
             success: true,
+            resetURL: resetURL,
             message: "If an account exists, reset link has been sent to email",
         });
 
