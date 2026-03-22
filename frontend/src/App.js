@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Auth & Protection
 import { ProtectedRoute, PublicRoute, RoleGuard } from "./Protected";
+import AdminProtectedRoute from "./routes/AdminProtectedRoute";
 import useLanguageStore from "./store/useLanguageStore";
 
 // Profile & Notifications
@@ -124,8 +125,10 @@ const App = () => {
             <Route path="/user-login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPasswordHTML />} />
             <Route path="/resetPassword/:token" element={<ResetPasswordHTML />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
           </Route>
+
+          {/* Admin login is always accessible — not gated by PublicRoute */}
+          <Route path="/admin-login" element={<AdminLogin />} />
 
           {/* 🔒 Core Protected Routes (Must be Logged In) */}
           <Route element={<ProtectedRoute />}>
@@ -160,23 +163,24 @@ const App = () => {
               </Route>
             </Route>
 
-            {/* 🛡️ Admin Specific Routes */}
-            <Route element={<RoleGuard allowedRoles={['admin']} />}>
-              <Route path="/admin-dashboard" element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="reports" element={<AdminDiseaseReports />} />
-                <Route path="conversations" element={<AdminConversations />} />
-                <Route path="moderation" element={<AdminImageModeration />} />
-                <Route path="market" element={<AdminMarketPrices />} />
-                <Route path="analytics" element={<AdminDashboardPage />} />
-                <Route path="map" element={<AdminFarmerMap />} />
-                <Route path="notifications" element={<AdminNotifications />} />
-                <Route path="feedback" element={<AdminFeedback />} />
-                <Route path="health" element={<AdminSystemHealth />} />
-                <Route path="ai" element={<AdminAI />} />
-              </Route>
-            </Route>
+
+
+          </Route> {/* End ProtectedRoute */}
+
+          {/* 🛡️ Admin Specific Routes — guarded by adminToken (email+password), NOT the standard user session */}
+          <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>} path="/admin-dashboard">
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="reports" element={<AdminDiseaseReports />} />
+            <Route path="conversations" element={<AdminConversations />} />
+            <Route path="moderation" element={<AdminImageModeration />} />
+            <Route path="market" element={<AdminMarketPrices />} />
+            <Route path="analytics" element={<AdminDashboardPage />} />
+            <Route path="map" element={<AdminFarmerMap />} />
+            <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="feedback" element={<AdminFeedback />} />
+            <Route path="health" element={<AdminSystemHealth />} />
+            <Route path="ai" element={<AdminAI />} />
           </Route>
 
           {/* 🚩 Standalone Pages */}

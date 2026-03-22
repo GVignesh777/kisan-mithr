@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import useUserStore from '../../store/useUserStore';
 
 const menuItems = [
   { name: 'Dashboard', path: '/admin-dashboard', icon: LayoutDashboard },
@@ -41,7 +42,7 @@ const AdminLayout = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [latestNotif, setLatestNotif] = useState(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,6 +62,8 @@ const AdminLayout = () => {
   const fetchUnreadCount = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      if (!token) return;
+
       const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/admin/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -68,18 +71,28 @@ const AdminLayout = () => {
       setLatestNotif(res.data);
     } catch (err) {
       console.error('Failed to fetch unread count');
+      if (err?.response?.status === 401) {
+        // Corrupted or expired token detected, auto-purge the session safely
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminDetails');
+        navigate('/admin-login');
+      }
     }
   };
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); 
+    const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminDetails');
+    // Clear user tokens to prevent PublicRoute trapped loops
+    localStorage.removeItem('auth_token');
+    useUserStore.getState().clearUser();
+
     toast.info('Logged out from Admin Portal');
     navigate('/user-login'); // Explicitly requested by user
   };
@@ -117,7 +130,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isSidebarOpen ? 288 : (isMobile ? 0 : 0),
           x: (isMobile && !isSidebarOpen) ? -288 : 0
         }}
@@ -126,7 +139,7 @@ const AdminLayout = () => {
       >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-24 px-8 shrink-0">
-          <div className="flex items-center gap-4 group cursor-pointer" onClick={() => {navigate('/admin-dashboard'); if(isMobile) setIsSidebarOpen(false);}}>
+          <div className="flex items-center gap-4 group cursor-pointer" onClick={() => { navigate('/admin-dashboard'); if (isMobile) setIsSidebarOpen(false); }}>
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
               <span className="font-black text-2xl text-white italic">K</span>
             </div>
@@ -150,7 +163,7 @@ const AdminLayout = () => {
           </div>
           {menuItems.map((item, index) => {
             const isActive = location.pathname === item.path || (location.pathname.startsWith(item.path) && item.path !== '/admin-dashboard');
-            
+
             return (
               <motion.button
                 key={item.name}
@@ -161,11 +174,10 @@ const AdminLayout = () => {
                   navigate(item.path);
                   if (isMobile) setIsSidebarOpen(false);
                 }}
-                className={`nav-item w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all relative group ${
-                  isActive
+                className={`nav-item w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all relative group ${isActive
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
                     : 'text-slate-400 hover:bg-white/5 hover:text-emerald-400'
-                }`}
+                  }`}
               >
                 <div className={`p-2 rounded-lg ${isActive ? 'bg-white/10' : 'group-hover:bg-emerald-400/10'} transition-colors`}>
                   <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-emerald-400'}`} />
@@ -230,7 +242,7 @@ const AdminLayout = () => {
 
             <div className="flex items-center gap-3 lg:gap-6">
               <div className="relative">
-                <button 
+                <button
                   onClick={handleNotificationClick}
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
@@ -243,25 +255,25 @@ const AdminLayout = () => {
                     </span>
                   )}
                 </button>
-                
+
                 <AnimatePresence>
                   {showTooltip && latestNotif?.latestMessage && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 15, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 15, scale: 0.95 }}
                       className="absolute right-0 mt-4 w-72 bg-white rounded-3xl shadow-2xl shadow-emerald-900/10 border border-slate-100 p-6 z-[100] ring-1 ring-slate-900/5"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                         <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                         <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Latest from {latestNotif.latestSender || 'Farmer'}</span>
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Latest from {latestNotif.latestSender || 'Farmer'}</span>
                       </div>
                       <p className="text-slate-600 text-xs font-medium leading-relaxed italic line-clamp-3">
                         "{latestNotif.latestMessage}"
                       </p>
                       <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                         <span className="text-[9px] font-bold text-slate-400">Click to expand</span>
-                         <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center"><svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></div>
+                        <span className="text-[9px] font-bold text-slate-400">Click to expand</span>
+                        <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center"><svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></div>
                       </div>
                     </motion.div>
                   )}
@@ -299,13 +311,14 @@ const AdminLayout = () => {
           >
             <Outlet />
           </motion.div>
-          
+
           <div className="fixed top-0 right-0 -z-10 w-[800px] h-[800px] bg-emerald-400/5 rounded-full blur-[120px] pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
           <div className="fixed bottom-0 left-0 -z-10 w-[600px] h-[600px] bg-blue-400/5 rounded-full blur-[100px] pointer-events-none -translate-x-1/2 translate-y-1/2"></div>
         </main>
       </div>
-      
-      <style dangerouslySetInnerHTML={{ __html: `
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes swing {
           0% { transform: rotate(0deg); }
           15% { transform: rotate(15deg); }

@@ -19,6 +19,11 @@ const AdminNotifications = () => {
       setNotifications(res.data);
     } catch (err) {
       toast.error('Failed to fetch notifications');
+      if (err?.response?.status === 401) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminDetails');
+        window.location.href = '/admin-login';
+      }
     } finally {
       setIsLoading(false);
     }

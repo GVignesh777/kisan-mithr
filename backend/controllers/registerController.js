@@ -112,11 +112,33 @@ const verifyOtp = async (req, res) => {
 
 const updateProfile = async (req, res) => {
     const { username, agreed, about } = req.body;
-    const userId = req.user?._id || req.user?.userId;
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
+
+    console.log('[updateProfile] req.user =', req.user);
+    console.log('[updateProfile] resolved userId =', userId);
 
     try {
-        const user = await User.findById(userId);
-        console.log(user);
+        if (!userId) {
+            return response(res, 401, "Unauthorized: could not extract user ID from token");
+        }
+
+        // Primary lookup by userId from JWT
+        let user = await User.findById(userId);
+
+        // Fallback: lookup by email (handles edge cases with Google OAuth tokens)
+        if (!user && req.body.email) {
+            user = await User.findOne({ $or: [
+                { email: req.body.email },
+                { googleMail: req.body.email }
+            ]});
+            console.log('[updateProfile] Fallback email lookup result:', user?._id);
+        }
+
+        if (!user) {
+            console.error('[updateProfile] User not found for ID:', userId);
+            return response(res, 404, "User not found");
+        }
+
         const file = req.file;
         if (file) {
             const uploadResult = await uploadFileToCloudinary(file);
@@ -127,12 +149,15 @@ const updateProfile = async (req, res) => {
         }
 
         if (username) user.username = username;
-        if (agreed) user.agreed = agreed;
+        if (agreed !== undefined) user.agreed = agreed;
         if (about) user.about = about;
+        // Support role updates from the Profile Settings page
+        const role = req.body.role;
+        if (role) user.role = role;
         await user.save();
         return response(res, 200, 'User profile updated successfully', user);
     } catch (error) {
-        console.error(error);
+        console.error('[updateProfile] error:', error);
         return response(res, 500, "Internal server error");
     }
 }
@@ -142,7 +167,7 @@ const selectRole = async (req, res) => {
     try {
         // const { userId } = req.user?._id || req.user?.userId;
 
-        const userId = req.user?._id || req.user?.userId;
+        const userId = req.user?.userId || req.user?.id || req.user?._id;
         const { role } = req.body;
         console.log('userId', userId)
         console.log('role', role)
@@ -165,7 +190,7 @@ const selectRole = async (req, res) => {
 
 const checkAuthenticated = async (req, res) => {
     try {
-        const userId = req.user?._id || req.user?.userId;
+        const userId = req.user?.userId || req.user?.id || req.user?._id;
         if (!userId) {
             return response(res, 404, "unauthorized, please login before access Kisan Mithr");
         }

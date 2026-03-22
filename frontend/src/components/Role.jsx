@@ -83,11 +83,11 @@ const RoleCard = ({ role }) => {
 
       console.log(`Selecting role: ${role.id}`);
       const response = await selectRole(role.id);
-      
+
       // Handle the different possible shapes of a successful backend response
       if (response && (response.status === "success" || response.success === true || response.message)) {
         toast.success(`Welcome aboard, ${role.title}!`);
-        
+
         // Manually update the role in the store to avoid race conditions with checkUserAuth
         const currentUser = useUserStore.getState().user;
         setUser({ ...currentUser, role: role.id });
@@ -137,10 +137,10 @@ const RoleCard = ({ role }) => {
 
         {/* Image Section */}
         <div className="relative mb-8 aspect-video rounded-3xl overflow-hidden border border-zinc-800/80 group-hover:border-zinc-700 transition-colors">
-          <img 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-            src={role.img} 
-            alt={role.title} 
+          <img
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            src={role.img}
+            alt={role.title}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </div>

@@ -17,6 +17,7 @@ const ProfilePage = () => {
     });
 
     const [previewImage, setPreviewImage] = useState(user?.profilePicture || user?.googlePhoto || null);
+    const [selectedFile, setSelectedFile] = useState(null); // actual File object for upload
     const fileInputRef = useRef(null);
 
     const handleChange = (e) => {
@@ -26,6 +27,7 @@ const ProfilePage = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setSelectedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviewImage(reader.result);
@@ -39,23 +41,28 @@ const ProfilePage = () => {
         setIsLoading(true);
 
         try {
-            // If current password and new password are provided, we should ideally call a change-password API.
-            // But since we just have updateUserProfile, we pass everything that changed.
-            const payload = {
-                userId: user._id || user.id,
-                username: formData.username,
-                role: formData.role,
-                profilePicture: previewImage, // Will be base64 if changed
-            };
+            // Use FormData so multer (multipart/form-data) can correctly process file uploads
+            const formPayload = new FormData();
+            formPayload.append('username', formData.username);
+            formPayload.append('role', formData.role);
+            // Send email as fallback identifier for the backend
+            formPayload.append('email', user?.email || user?.googleEmail || user?.googleMail || '');
 
-            if (formData.newPassword) {
-                payload.password = formData.newPassword;
+            if (selectedFile) {
+                // New file selected — let multer upload it to Cloudinary
+                formPayload.append('media', selectedFile);
+            } else if (previewImage && previewImage.startsWith('http')) {
+                // No new file, just keep existing Cloudinary URL as plain text
+                formPayload.append('profilePicture', previewImage);
             }
 
-            const res = await updateUserProfile(payload);
+            if (formData.newPassword) {
+                formPayload.append('password', formData.newPassword);
+            }
 
-            if (res.success || res.status === 'success' || !res.error) {
-                // Optimistically update store
+            const res = await updateUserProfile(formPayload);
+
+            if (res.status === 'success' || res.success) {
                 setUser({
                     ...user,
                     username: formData.username,
@@ -64,7 +71,6 @@ const ProfilePage = () => {
                 });
 
                 toast.success("Profile updated successfully!");
-                // Optionally auto-redirect if role changed
                 if (user.role !== formData.role) {
                     setTimeout(() => {
                         window.location.href = formData.role === 'buyer' ? '/buyer-dashboard' : formData.role === 'admin' ? '/admin-dashboard' : '/';

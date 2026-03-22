@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const AdminProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
@@ -10,7 +10,9 @@ const AdminProtectedRoute = ({ children }) => {
     return <Navigate to="/admin-login" state={{ from: location }} replace />;
   }
 
-  return children;
+  // Render children if passed (e.g. <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>)
+  // Otherwise render Outlet for pure route-guard usage
+  return children ? children : <Outlet />;
 };
 
 export default AdminProtectedRoute;
