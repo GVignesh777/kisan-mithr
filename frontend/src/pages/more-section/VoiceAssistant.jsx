@@ -76,6 +76,18 @@ const VoiceAssistant = () => {
         .catch(e => console.error("Failed to load chats from Mongoose db", e));
   }, []);
 
+  // Cleanup speech/audio on unmount to prevent ghost speaking
+  useEffect(() => {
+    return () => {
+      synthRef.current?.cancel();
+      if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = "";
+          audioRef.current = null;
+      }
+    };
+  }, []);
+
   // Init Speech Recognition & Background Wake Word Listener
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -423,6 +435,9 @@ const VoiceAssistant = () => {
           setTimeout(() => syncChatToMongo(finalSyncId, updatedChatsPostAI), 100);
 
           setAssistantState('speaking');
+          stopWakeWordListener(); // Ensure all listening is DEAD before TTS begins to avoid Mobile OS mic/speaker conflict
+          try { recognitionRef.current?.stop(); } catch(e) {}
+          
           speakText(aiResponseText, language);
 
       } catch (error) {

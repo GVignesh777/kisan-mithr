@@ -108,7 +108,7 @@ const App = () => {
   };
 
   return (
-    <div className={`${getFontClass()} antialiased transition-all duration-300 min-h-screen`}>
+    <div className={`${getFontClass()} antialiased transition-all duration-300 min-h-screen bg-zinc-950 text-white`}>
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
 
