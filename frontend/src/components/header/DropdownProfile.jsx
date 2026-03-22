@@ -77,6 +77,7 @@ const DropdownProfile = () => {
         <div className="w-12 h-12 bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center rounded-full font-bold text-lg overflow-hidden flex-shrink-0">
           {profile ? (
             <img
+              onClick={()=> navigate("/profile")}
               className="w-full h-full object-cover"
               src={profile}
               referrerPolicy="no-referrer"
