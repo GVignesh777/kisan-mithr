@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, ChevronDown } from "lucide-react";
 import useTranslation from "../../hooks/useTranslation";
 import DropdownHome from "./DropdownHome";
@@ -16,12 +16,23 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
     setOpenSection(openSection === section ? "" : section);
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Backdrop */}
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 lg:hidden ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
       />
@@ -29,7 +40,7 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
       {/* Sidebar Drawer */}
       <div 
         className={`fixed top-0 right-0 h-full w-[280px] sm:w-[320px] bg-zinc-950 border-l border-zinc-800 shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+          isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
         }`}
       >
         <div className="p-6">
