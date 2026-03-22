@@ -16,6 +16,7 @@ const transporter = nodemailer.createTransport({
     port: 587,
     secure: false,
     requireTLS: true, // 🔒 ensures encryption
+    family: 4, // 🔥 MUST be here
     connectionTimeout: 10000,
     greetingTimeout: 5000,
     socketTimeout: 15000,
