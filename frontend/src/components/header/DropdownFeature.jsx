@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const DropdownFeature = () => {
+const DropdownFeature = ({ isMobile }) => {
   const navigate = useNavigate();
   const features = [
     {
@@ -32,12 +32,6 @@ const DropdownFeature = () => {
       desc: "Sell directly without middlemen",
       path: "/buyer/market",
     },
-    // {
-    //   icon: LayoutDashboard,
-    //   title: "Farmer Dashboard",
-    //   desc: "Track crops, sales & analytics",
-    //   path: "/buyer",
-    // },
     {
       icon: Package,
       title: "Order Management",
@@ -69,6 +63,28 @@ const DropdownFeature = () => {
       path: "/satellite-cockpit",
     },
   ];
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-2 mt-2">
+        {features.map((feature, index) => {
+          const Icon = feature.icon;
+          return (
+            <div
+              key={index}
+              onClick={() => navigate(feature.path)}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer"
+            >
+              <Icon className="w-4 h-4 text-green-400" />
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-300">{feature.title}</h3>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="absolute left-1/2 -translate-x-1/2 top-16 w-[650px] bg-zinc-950/95 backdrop-blur-xl border border-zinc-800 shadow-[0_10px_40px_-5px_rgba(0,0,0,0.5)] rounded-2xl p-6 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 transform origin-top translate-y-2 group-hover:translate-y-0">

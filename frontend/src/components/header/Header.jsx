@@ -53,20 +53,20 @@ export default function Header() {
     <header
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
         scrolled
-          ? "bg-zinc-950/80 backdrop-blur-xl border-zinc-900 shadow-xl py-3"
-          : "bg-transparent border-transparent py-5 pointer-events-none"
+          ? "bg-zinc-950/80 backdrop-blur-xl border-zinc-900 shadow-xl py-2 md:py-3"
+          : "bg-transparent border-transparent py-3 md:py-5 pointer-events-none"
       }`}
     >
-      <div className={`mx-auto px-6 md:px-12 flex justify-between items-center max-w-7xl transition-all duration-500 ${!scrolled ? "pointer-events-auto filter drop-shadow-2xl" : ""}`}>
+      <div className={`mx-auto px-4 sm:px-6 md:px-12 flex justify-between items-center max-w-7xl transition-all duration-500 ${!scrolled ? "pointer-events-auto filter drop-shadow-2xl" : ""}`}>
         {/* Logo */}
         <div
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-2 md:gap-3 cursor-pointer group"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
-          <div className="relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden group-hover:border-green-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-colors">
+          <div className="relative flex items-center justify-center w-8 h-8 md:w-12 md:h-12 rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden group-hover:border-green-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-colors">
             <img className="object-cover w-full h-full" src={logo} alt="Kisan Mithr Logo" />
           </div>
-          <span className="text-xl md:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500 drop-shadow-sm">
+          <span className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500 drop-shadow-sm">
             Kisan Mithr
           </span>
         </div>

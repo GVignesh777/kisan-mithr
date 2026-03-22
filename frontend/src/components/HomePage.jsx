@@ -117,7 +117,7 @@ const HomePage = () => {
       </div>
 
       {/* Features Showcase Section */}
-      <div className="py-24 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
+      <div className="py-16 md:py-24 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">{t("everythingYouNeed")}</h2>
           <p className="text-zinc-400 max-w-2xl mx-auto text-lg">{t("integratedTools")}</p>
@@ -176,7 +176,7 @@ const HomePage = () => {
 
       {/* Value Proposition / Mission Section */}
       <div className="border-t border-zinc-900 bg-zinc-950">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-24 flex flex-col lg:flex-row items-center gap-16">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24 flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 space-y-8">
             <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
               {t("platformBuiltFor")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-500">{t("futureOfFarming")}</span>
@@ -224,7 +224,7 @@ const HomePage = () => {
       </div>
 
       {/* Professional Feedback & Complaints Section */}
-      <div className="relative border-t border-zinc-900 bg-zinc-950/50 py-24 overflow-hidden">
+      <div className="relative border-t border-zinc-900 bg-zinc-950/50 py-16 md:py-24 overflow-hidden">
         {/* Abstract background elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
@@ -242,7 +242,7 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden group">
+          <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 sm:p-8 md:p-12 shadow-2xl relative overflow-hidden group">
             {/* Glossy overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
             

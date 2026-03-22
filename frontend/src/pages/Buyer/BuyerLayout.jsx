@@ -155,7 +155,7 @@ const BuyerLayout = () => {
       <main className="flex-1 flex flex-col relative z-10 overflow-hidden">
         
         {/* Dashboard Header */}
-        <header className={`sticky top-0 z-40 px-8 py-4 flex items-center justify-between transition-all duration-300 border-b ${
+        <header className={`sticky top-0 z-40 px-4 sm:px-6 md:px-8 py-4 flex items-center justify-between transition-all duration-300 border-b ${
           scrolled ? "bg-zinc-950/80 backdrop-blur-md border-white/5 shadow-xl" : "bg-transparent border-transparent"
         }`}>
           <div className="flex items-center gap-3 md:gap-4">

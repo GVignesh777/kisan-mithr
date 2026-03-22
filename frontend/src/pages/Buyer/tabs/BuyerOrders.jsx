@@ -11,18 +11,18 @@ const BuyerOrders = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-           <h2 className="text-3xl font-black text-white tracking-tight">Order Management</h2>
-           <p className="text-zinc-500 font-medium mt-1">Track and manage your procurement lifecycle</p>
+           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Order Management</h2>
+           <p className="text-zinc-500 font-medium mt-1 text-sm md:text-base">Track and manage your procurement lifecycle</p>
         </div>
-        <div className="flex gap-4">
-           <div className="relative group">
+        <div className="flex gap-4 w-full md:w-auto">
+           <div className="relative group w-full md:w-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
               <input 
                 type="text" 
                 placeholder="Search order ID..." 
-                className="bg-white/5 border border-white/5 rounded-2xl py-3 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-green-500/20 w-64 text-sm"
+                className="bg-white/5 border border-white/5 rounded-2xl py-3 pl-12 pr-6 focus:outline-none focus:ring-2 focus:ring-green-500/20 w-full md:w-64 text-sm"
               />
            </div>
         </div>

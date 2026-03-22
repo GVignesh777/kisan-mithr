@@ -1,5 +1,5 @@
-import React from "react";
-import { X } from "lucide-react";
+import React, { useState } from "react";
+import { X, ChevronDown } from "lucide-react";
 import useTranslation from "../../hooks/useTranslation";
 import DropdownHome from "./DropdownHome";
 import DropdownAbout from "./DropdownAbout";
@@ -10,6 +10,11 @@ import DropdownContact from "./DropdownContact";
 
 const HomePageSidebar = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
+  const [openSection, setOpenSection] = useState("");
+
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? "" : section);
+  };
 
   return (
     <>
@@ -43,62 +48,98 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
           <nav className="flex flex-col space-y-2">
             {/* HOME */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationHome")}
-              </a>
-              <div className="pl-4">
-                <DropdownHome isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('home')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationHome")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'home' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'home' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownHome isMobile={true} />
+                </div>
+              )}
             </div>
 
             {/* ABOUT */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2 pt-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationAbout")}
-              </a>
-              <div className="pl-4">
-                <DropdownAbout isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('about')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationAbout")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'about' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'about' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownAbout isMobile={true} />
+                </div>
+              )}
             </div>
 
             {/* SERVICES */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2 pt-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationServices")}
-              </a>
-              <div className="pl-4">
-                <DropdownFeature isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('services')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationServices")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'services' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'services' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownFeature isMobile={true} />
+                </div>
+              )}
             </div>
 
             {/* MARKETPLACE */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2 pt-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationMarketplace")}
-              </a>
-              <div className="pl-4">
-                 <DropdownMarketplace isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('marketplace')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationMarketplace")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'marketplace' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'marketplace' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownMarketplace isMobile={true} />
+                </div>
+              )}
             </div>
 
             {/* SCHEMES */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2 pt-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationSchemes")}
-              </a>
-              <div className="pl-4">
-                 <DropdownSchemes isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('schemes')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationSchemes")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'schemes' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'schemes' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownSchemes isMobile={true} />
+                </div>
+              )}
             </div>
 
             {/* CONTACT */}
             <div className="flex flex-col gap-1 pt-2">
-              <a href="#" className="flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium">
-                {t("navigationContact")}
-              </a>
-              <div className="pl-4">
-                 <DropdownContact isMobile={true} />
-              </div>
+              <button 
+                onClick={() => toggleSection('contact')}
+                className="w-full flex items-center justify-between text-zinc-300 hover:text-green-400 p-2 rounded-lg hover:bg-zinc-900 transition-colors font-medium"
+              >
+                <span>{t("navigationContact")}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${openSection === 'contact' ? 'rotate-180' : ''}`} />
+              </button>
+              {openSection === 'contact' && (
+                <div className="pl-4 animate-fadeIn">
+                  <DropdownContact isMobile={true} />
+                </div>
+              )}
             </div>
             
           </nav>

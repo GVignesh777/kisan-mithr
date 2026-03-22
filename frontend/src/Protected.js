@@ -12,6 +12,7 @@ import Loader from "./utils/loader";
 export const ProtectedRoute = () => {
     const location = useLocation();
     const { isAuthenticated, user, setUser, clearUser } = useUserStore();
+    const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
         // If already authenticated, skip the server round-trip entirely.
