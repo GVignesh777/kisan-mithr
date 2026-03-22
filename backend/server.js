@@ -64,12 +64,8 @@ app.use("/api/admin", adminRoutes);
 const startMarketPriceCron = require("./cron/marketPriceCron.js");
 
 
-// start cron job locally only
-if (process.env.NODE_ENV !== 'production') {
-    startMarketPriceCron();
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}
+// start cron job
+startMarketPriceCron();
 
-// Export the Express API for Serverless (Vercel)
-module.exports = app;
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));

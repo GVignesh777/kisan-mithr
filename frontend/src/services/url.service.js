@@ -1,9 +1,6 @@
 import axios from "axios";
 
-// Dynamically use internal `/api` path in production (since backend and frontend will be hosted together on Vercel)
-const apiUrl = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL?.includes('localhost')
-  ? '/api'
-  : `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api`;
+const apiUrl = `${process.env.REACT_APP_API_URL}/api`;
 
 const axiosInstance = axios.create({
     baseURL: apiUrl,
