@@ -4,7 +4,8 @@ import ChatWindow from '../../components/ChatWindow';
 import InputArea from './InputArea';
 import LanguageSelector from './LanguageSelector';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
-import { Menu } from 'lucide-react';
+import { Menu, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const VoiceAssistant = () => {
   const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
@@ -587,19 +588,36 @@ const VoiceAssistant = () => {
       {/* Main Feature Area */}
       <div className="flex-1 flex flex-col h-full relative z-10 transition-all">
          {/* Top Glass Header */}
-         <header className="absolute top-0 left-0 w-full flex justify-between items-center p-4 border-b border-white/5 bg-black/20 backdrop-blur-md z-50">
-            <div className="flex items-center gap-3">
+         <header className="absolute top-0 left-0 w-full px-2 sm:px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-md z-[60] flex items-center justify-between">
+            {/* Left Controls */}
+            <div className="flex items-center gap-3 z-10">
                 <button 
                     onClick={() => setIsSidebarOpen(true)}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 lg:hidden"
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 lg:hidden text-zinc-100"
                 >
                     <Menu className="w-5 h-5" />
                 </button>
-                <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest truncate max-w-[150px] sm:max-w-none">Kisan Mithr AI</h1>
+                <h1 className="hidden lg:block text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest drop-shadow-md">Kisan Mithr AI</h1>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Mobile Dead-Center Title */}
+            <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none lg:hidden z-0 w-max">
+                <h1 className="text-base sm:text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-wider sm:tracking-widest drop-shadow-md">Kisan Mithr AI</h1>
+            </div>
+
+            {/* Right Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-3 z-10">
                 <VoiceCharacterSelector selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
                 <LanguageSelector language={language} setLanguage={setLanguage} />
+                
+                <Link 
+                    to="/role" 
+                    className="flex justify-center items-center p-2 sm:px-3 sm:py-2 bg-zinc-800/80 hover:bg-green-600/30 border border-zinc-700/50 hover:border-green-500/50 rounded-lg text-zinc-300 hover:text-green-400 transition-all shadow-md group"
+                    title="Role Selection"
+                >
+                    <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
+                    <span className="hidden sm:block ml-2 text-xs font-bold uppercase tracking-wider">Roles</span>
+                </Link>
             </div>
          </header>
 
