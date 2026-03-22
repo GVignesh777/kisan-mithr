@@ -12,7 +12,7 @@ const loginUser = async (req, res) => {
     // Check user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ status: false, message: "Invalid email or password" });
+      return res.status(404).json({ status: false, message: "User not found. Please register." });
     }
 
 
@@ -26,6 +26,8 @@ const loginUser = async (req, res) => {
       id: user._id,
       email: user.email,
       username: user.username,
+      role: user.role,
+      profilePicture: user.profilePicture,
     };
 
     const token = generateToken(user?._id);

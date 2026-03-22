@@ -127,7 +127,18 @@ const Login = () => {
           localStorage.setItem("auth_token", response.token); // Save token
           setUser(response.user); // Update store
           
-          navigate("/role");
+          // Direct users to their dashboard if they have a role
+          const userRole = response.user?.role;
+          if (userRole === 'admin') {
+            navigate("/admin-dashboard");
+          } else if (userRole === 'buyer') {
+            navigate("/buyer-dashboard");
+          } else if (userRole === 'farmer') {
+            navigate("/");
+          } else {
+            navigate("/role");
+          }
+          
           resetLoginState();
         } else {
           toast.error(response?.message || "Login failed");
