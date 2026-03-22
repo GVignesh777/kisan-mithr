@@ -10,37 +10,44 @@ import {
 import useUserStore from "../../store/useUserStore";
 import { logoutUser } from "../../services/user.service";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const profileItems = [
   {
     icon: LayoutDashboard,
     title: "Dashboard",
     desc: "Access your personalized dashboard",
+    path: "/"
   },
   {
     icon: User,
-    title: "My Profile",
-    desc: "View & edit personal information",
+    title: "Edit Profile",
+    desc: "Update your personal information",
+    path: "/profile"
+  },
+  {
+    icon: Shield,
+    title: "Switch Role",
+    desc: "Change to Farmer, Buyer, or Admin",
+    path: "/role"
   },
   {
     icon: Bell,
     title: "Notifications",
     desc: "Check alerts & scheme updates",
-  },
-  {
-    icon: Shield,
-    title: "Privacy & Security",
-    desc: "Manage password & security settings",
+    path: "/notifications"
   },
   {
     icon: Settings,
     title: "Account Settings",
     desc: "Customize your account preferences",
+    path: "#"
   },
 ];
 
 const DropdownProfile = () => {
   const { user, clearUser } = useUserStore();
+  const navigate = useNavigate();
   const userName = user?.username || user?.googleName || "Guest";
   // console.log("user", user)
   const profile =
@@ -94,6 +101,7 @@ const DropdownProfile = () => {
           return (
             <div
               key={index}
+              onClick={() => { if(item.path !== "#") navigate(item.path); }}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800/80 transition-all duration-200 cursor-pointer group/item"
             >
               <div className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg group-hover/item:border-green-500/40 group-hover/item:bg-green-500/10 transition-colors flex-shrink-0">

@@ -609,15 +609,6 @@ const VoiceAssistant = () => {
             <div className="flex items-center gap-1.5 sm:gap-3 z-10">
                 <VoiceCharacterSelector selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
                 <LanguageSelector language={language} setLanguage={setLanguage} />
-                
-                <Link 
-                    to="/role" 
-                    className="flex justify-center items-center p-2 sm:px-3 sm:py-2 bg-zinc-800/80 hover:bg-green-600/30 border border-zinc-700/50 hover:border-green-500/50 rounded-lg text-zinc-300 hover:text-green-400 transition-all shadow-md group"
-                    title="Role Selection"
-                >
-                    <LayoutDashboard size={18} className="group-hover:scale-110 transition-transform" />
-                    <span className="hidden sm:block ml-2 text-xs font-bold uppercase tracking-wider">Roles</span>
-                </Link>
             </div>
          </header>
 

@@ -9,6 +9,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { ProtectedRoute, PublicRoute, RoleGuard } from "./Protected";
 import useLanguageStore from "./store/useLanguageStore";
 
+// Profile & Notifications
+import ProfilePage from "./pages/ProfileSettings/ProfilePage";
+import NotificationsPage from "./pages/ProfileSettings/NotificationsPage";
+
 // Public Pages
 import Login from "./pages/user-login/Login";
 import ForgotPasswordHTML from "./pages/user-login/ForgotPass";
@@ -126,6 +130,8 @@ const App = () => {
           {/* 🔒 Core Protected Routes (Must be Logged In) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/role" element={<Role />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
 
             {/* 🚜 Farmer Specific Routes */}
             <Route element={<RoleGuard allowedRoles={['farmer']} />}>
