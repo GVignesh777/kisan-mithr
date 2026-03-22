@@ -2,7 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const response = require("../utils/responseHandler");
 const otpGenerate = require("../utils/otpGenerator");
-const { sendOtpToEmail, sendWelcomeEmail } = require("../services/emailService");
+const { sendOtpToEmail } = require("../services/emailService");
 const generateToken = require("../utils/generateToken");
 
 
@@ -54,9 +54,6 @@ const registerUser = async (req, res) => {
 
         // Send OTP
         await sendOtpToEmail(email, otp);
-
-        // Send Welcome Email Gracefully
-        await sendWelcomeEmail(email, username);
 
         return response(res, 200, "OTP sent successfully", user);
 

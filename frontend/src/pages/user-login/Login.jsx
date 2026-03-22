@@ -16,6 +16,7 @@ import {
 } from "../../services/user.service";
 import { toast } from "react-toastify";
 import Spinner from "../../utils/spinner";
+import { sendWelcomeEmail } from "../../utils/sendEmail";
 import useUserStore from "../../store/useUserStore";
 import ForgotPasswordHTML from "./ForgotPass";
 import LanguageSwitcher from "../more-section/LanguageSwitcher";
@@ -246,7 +247,16 @@ const Login = () => {
       }
 
       await updateUserProfile(formData);
-      toast.success(`Welcome back,${data.username}`);
+
+      // ✅ Gracefully trigger Welcome Email from the Frontend
+      if (userPhoneData?.email) {
+          sendWelcomeEmail({
+              username: data.username,
+              email: userPhoneData.email
+          }); // We purposefully don't "await" so UI doesn't freeze
+      }
+
+      toast.success(`Welcome back, ${data.username}`);
       navigate("/role");
       resetLoginState();
     } catch (error) {
