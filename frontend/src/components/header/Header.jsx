@@ -54,10 +54,10 @@ export default function Header() {
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
         scrolled
           ? "bg-zinc-950/80 backdrop-blur-xl border-zinc-900 shadow-xl py-2 md:py-3"
-          : "bg-transparent border-transparent py-3 md:py-5 pointer-events-none"
+          : "bg-transparent border-transparent py-3 md:py-5"
       }`}
     >
-      <div className={`mx-auto px-4 sm:px-6 md:px-12 flex justify-between items-center max-w-7xl transition-all duration-500 ${!scrolled ? "pointer-events-auto filter drop-shadow-2xl" : ""}`}>
+      <div className={`mx-auto px-4 sm:px-6 md:px-12 flex justify-between items-center max-w-7xl transition-all duration-500 ${!scrolled ? "filter drop-shadow-2xl" : ""}`}>
         {/* Logo */}
         <div
           className="flex items-center gap-2 md:gap-3 cursor-pointer group"

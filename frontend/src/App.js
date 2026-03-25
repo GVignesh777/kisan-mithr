@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import PageTransitionLoader from "./components/PageTransitionLoader";
+import NetworkSplashScreen from "./components/NetworkSplashScreen";
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -69,9 +70,9 @@ import AdminAI from './pages/Admin/AdminAI';
 const RouteChangeListener = () => {
   const location = useLocation();
   const [visible, setVisible] = useState(false);
-  const [phase, setPhase]     = useState('enter');
-  const isFirst               = useRef(true);
-  const timerRef              = useRef(null);
+  const [phase, setPhase] = useState('enter');
+  const isFirst = useRef(true);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     // Skip the very first render (page load)
@@ -95,7 +96,7 @@ const RouteChangeListener = () => {
     }, 650);
 
     return () => clearTimeout(timerRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   return <PageTransitionLoader visible={visible} phase={phase} />;
@@ -105,6 +106,15 @@ const RouteChangeListener = () => {
 const App = () => {
   const { language } = useLanguageStore();
 
+  // Show splash only once per browser session
+  const [showSplash, setShowSplash] = useState(
+    () => !sessionStorage.getItem("km_splash_seen")
+  );
+
+  const handleSplashDone = () => {
+    sessionStorage.setItem("km_splash_seen", "1");
+    setShowSplash(false);
+  };
 
   const getFontClass = () => {
     if (language?.includes('hi')) return 'font-hind';
@@ -114,6 +124,7 @@ const App = () => {
 
   return (
     <div className={`${getFontClass()} antialiased transition-all duration-300 min-h-screen bg-zinc-950 text-white`}>
+      {showSplash && <NetworkSplashScreen onDone={handleSplashDone} />}
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
 
@@ -187,9 +198,9 @@ const App = () => {
           <Route path="/error" element={<ErrorPage />} />
 
           {/* 🔍 404 Redirect */}
-          <Route 
-            path="*" 
-            element={<Navigate to="/error" state={{ error: "Error 404: Page not found" }} replace />} 
+          <Route
+            path="*"
+            element={<Navigate to="/error" state={{ error: "Error 404: Page not found" }} replace />}
           />
         </Routes>
       </Router>
