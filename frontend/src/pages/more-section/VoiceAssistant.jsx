@@ -6,6 +6,7 @@ import LanguageSelector from './LanguageSelector';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
 import { Menu, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const VoiceAssistant = () => {
   const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
@@ -23,13 +24,12 @@ const VoiceAssistant = () => {
   const recognitionRef = useRef(null);
   const synthRef = useRef(window.speechSynthesis);
   const audioRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
   
   // Refs for Wakeword control to avoid closure staleness
   const wakeWordListenerRef = useRef(null);
   const wakeWordActiveRef = useRef(false);
+  const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const persistentStreamRef = useRef(null);
 
   const TEMP_USER_ID = "69a682c84987830f3e21ef14"; // Live login ID mock
 
@@ -110,30 +110,33 @@ const VoiceAssistant = () => {
       setTranscript(finalTrans || interimTrans);
     };
 
-    recognitionRef.current.onstart = () => {
+    recognitionRef.current.onstart = async () => {
        audioChunksRef.current = [];
-       if (persistentStreamRef.current) {
-           mediaRecorderRef.current = new MediaRecorder(persistentStreamRef.current);
+       try {
+           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+           mediaRecorderRef.current = new MediaRecorder(stream);
            mediaRecorderRef.current.ondataavailable = (e) => {
                if (e.data.size > 0) audioChunksRef.current.push(e.data);
            };
            mediaRecorderRef.current.start();
-           console.log("Audio recording started for Whisper using persistent stream...");
-       } else {
-           console.warn("No persistent stream available for MediaRecorder");
+           console.log("Audio recording started for Whisper...");
+       } catch (err) {
+           console.error("Error starting MediaRecorder:", err);
        }
     };
 
     recognitionRef.current.onend = () => {
       // Stop media recorder
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          console.log("Stopping MediaRecorder from recognition.onend...");
           mediaRecorderRef.current.stop();
-          console.log("Audio recording stopped.");
       }
 
       setAssistantState((prev) => {
           if (prev === 'listening') return 'thinking';
-          if (prev === 'idle') startWakeWordListener();
+          if (prev === 'idle') {
+              setTimeout(startWakeWordListener, 500); // Add a small delay for mic release
+          }
           return prev;
       });
     };
@@ -142,9 +145,20 @@ const VoiceAssistant = () => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
       }
-      if (e.error !== 'no-speech') console.error("Speech recognition error", e);
+      
+      // Improved error logging
+      const errorMsg = e.error || "unknown";
+      if (errorMsg !== 'no-speech') {
+          console.error(`Status: Speech recognition error (${errorMsg})`, e);
+          if (errorMsg === 'not-allowed') {
+              toast.error("Microphone access denied. Please check your browser settings.");
+          } else if (errorMsg === 'network') {
+              toast.error("Network issue with speech recognition. Please check your connection.");
+          }
+      }
+
       setAssistantState('idle');
-      startWakeWordListener();
+      setTimeout(startWakeWordListener, 1000); // Longer delay on error
     };
 
     // 2. Setup the Background Wake Word Listener
@@ -159,23 +173,30 @@ const VoiceAssistant = () => {
        const currentResultStr = event.results[event.results.length - 1][0].transcript.toLowerCase();
        
        if (currentResultStr.includes('hey kisan') || currentResultStr.includes('kisan')) {
-           console.log("Wake word detected:", currentResultStr);
-           stopWakeWordListener();
-           
-           const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-           beep.volume = 0.2;
-           beep.play().catch(e => {});
-           
-           setInputMode('voice');
-           setTranscript('');
-           setAssistantState('listening');
-           
-           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-           const startDelay = isMobile ? 800 : 300; // Longer delay on mobile to allow mic release
-           
-           setTimeout(() => {
-               try { recognitionRef.current.start(); } catch(e){}
-           }, startDelay);
+            console.log("Wake word detected:", currentResultStr);
+            
+            // CRITICAL: Stop the wake word listener IMMEDIATELY and wait for it to release the mic
+            wakeWordActiveRef.current = false;
+            wakeWordListener.stop();
+            
+            const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+            beep.volume = 0.2;
+            beep.play().catch(e => {});
+            
+            setInputMode('voice');
+            setTranscript('');
+            setAssistantState('listening');
+            
+            // Give the browser time to release the mic before starting the main recognition
+            setTimeout(() => {
+                try { 
+                    if (recognitionRef.current) {
+                        recognitionRef.current.start(); 
+                    }
+                } catch(e){
+                    console.error("Failed to start main recognition after wake word:", e);
+                }
+            }, 600);
        }
     };
 
@@ -203,29 +224,20 @@ const VoiceAssistant = () => {
 
   // Browser Audio & TTS Unlock Mechanism
   // Browsers block autoplaying Audio and SpeechSynthesis until the user interacts with the document.
-   const unlockAudioContext = async () => {
-       // Unlock native TTS
-       if (synthRef.current && synthRef.current.getVoices().length > 0) {
-           const silentUtterance = new SpeechSynthesisUtterance('');
-           silentUtterance.volume = 0;
-           synthRef.current.speak(silentUtterance);
-       }
-       // Unlock HTML5 Audio
-       const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
-       silentAudio.volume = 0;
-       silentAudio.play().catch(() => {});
-       
-       // Pre-request Mic Stream on this same User Gesture (CRITICAL FOR MOBILE)
-       try {
-           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-           persistentStreamRef.current = stream;
-           console.log("Mic stream pre-authorized on mobile user gesture.");
-       } catch (e) {
-           console.error("Mic pre-auth failed", e);
-       }
-
-       setAudioUnlocked(true);
-   };
+  const unlockAudioContext = () => {
+      // Unlock native TTS
+      if (synthRef.current && synthRef.current.getVoices().length > 0) {
+          const silentUtterance = new SpeechSynthesisUtterance('');
+          silentUtterance.volume = 0;
+          synthRef.current.speak(silentUtterance);
+      }
+      // Unlock HTML5 Audio
+      const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
+      silentAudio.volume = 0;
+      silentAudio.play().catch(() => {});
+      
+      setAudioUnlocked(true);
+  };
 
   useEffect(() => {
       if (recognitionRef.current) recognitionRef.current.lang = language;
