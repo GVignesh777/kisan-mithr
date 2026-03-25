@@ -23,6 +23,7 @@ const VoiceAssistant = () => {
   const recognitionRef = useRef(null);
   const synthRef = useRef(window.speechSynthesis);
   const audioRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
   
   // Refs for Wakeword control to avoid closure staleness
   const wakeWordListenerRef = useRef(null);
