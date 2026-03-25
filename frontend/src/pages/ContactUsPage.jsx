@@ -57,7 +57,12 @@ const ContactUsPage = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const adminPhone = process.env.REACT_APP_ADMIN_WHATSAPP_NUMBER || "919100000000";
+      const adminPhone = process.env.REACT_APP_ADMIN_WHATSAPP_NUMBER || "919440602166";
+      
+      // Verification log (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Using WhatsApp Number:", adminPhone);
+      }
       
       // Construct the WhatsApp message
       const message = `*Kisan Mithr - New Inquiry*%0A%0A` +

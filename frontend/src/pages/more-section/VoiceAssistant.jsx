@@ -27,8 +27,8 @@ const VoiceAssistant = () => {
   // Refs for Wakeword control to avoid closure staleness
   const wakeWordListenerRef = useRef(null);
   const wakeWordActiveRef = useRef(false);
-  const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const persistentStreamRef = useRef(null);
 
   const TEMP_USER_ID = "69a682c84987830f3e21ef14"; // Live login ID mock
 
@@ -109,18 +109,17 @@ const VoiceAssistant = () => {
       setTranscript(finalTrans || interimTrans);
     };
 
-    recognitionRef.current.onstart = async () => {
+    recognitionRef.current.onstart = () => {
        audioChunksRef.current = [];
-       try {
-           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-           mediaRecorderRef.current = new MediaRecorder(stream);
+       if (persistentStreamRef.current) {
+           mediaRecorderRef.current = new MediaRecorder(persistentStreamRef.current);
            mediaRecorderRef.current.ondataavailable = (e) => {
                if (e.data.size > 0) audioChunksRef.current.push(e.data);
            };
            mediaRecorderRef.current.start();
-           console.log("Audio recording started for Whisper...");
-       } catch (err) {
-           console.error("Error starting MediaRecorder:", err);
+           console.log("Audio recording started for Whisper using persistent stream...");
+       } else {
+           console.warn("No persistent stream available for MediaRecorder");
        }
     };
 
@@ -170,9 +169,12 @@ const VoiceAssistant = () => {
            setTranscript('');
            setAssistantState('listening');
            
+           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+           const startDelay = isMobile ? 800 : 300; // Longer delay on mobile to allow mic release
+           
            setTimeout(() => {
                try { recognitionRef.current.start(); } catch(e){}
-           }, 300);
+           }, startDelay);
        }
     };
 
@@ -200,20 +202,29 @@ const VoiceAssistant = () => {
 
   // Browser Audio & TTS Unlock Mechanism
   // Browsers block autoplaying Audio and SpeechSynthesis until the user interacts with the document.
-  const unlockAudioContext = () => {
-      // Unlock native TTS
-      if (synthRef.current && synthRef.current.getVoices().length > 0) {
-          const silentUtterance = new SpeechSynthesisUtterance('');
-          silentUtterance.volume = 0;
-          synthRef.current.speak(silentUtterance);
-      }
-      // Unlock HTML5 Audio
-      const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
-      silentAudio.volume = 0;
-      silentAudio.play().catch(() => {});
-      
-      setAudioUnlocked(true);
-  };
+   const unlockAudioContext = async () => {
+       // Unlock native TTS
+       if (synthRef.current && synthRef.current.getVoices().length > 0) {
+           const silentUtterance = new SpeechSynthesisUtterance('');
+           silentUtterance.volume = 0;
+           synthRef.current.speak(silentUtterance);
+       }
+       // Unlock HTML5 Audio
+       const silentAudio = new Audio('data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
+       silentAudio.volume = 0;
+       silentAudio.play().catch(() => {});
+       
+       // Pre-request Mic Stream on this same User Gesture (CRITICAL FOR MOBILE)
+       try {
+           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+           persistentStreamRef.current = stream;
+           console.log("Mic stream pre-authorized on mobile user gesture.");
+       } catch (e) {
+           console.error("Mic pre-auth failed", e);
+       }
+
+       setAudioUnlocked(true);
+   };
 
   useEffect(() => {
       if (recognitionRef.current) recognitionRef.current.lang = language;
