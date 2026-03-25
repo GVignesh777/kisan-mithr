@@ -21,6 +21,7 @@ import ForgotPasswordHTML from "./pages/user-login/ForgotPass";
 import ResetPasswordHTML from "./pages/user-login/ResetPass";
 import AdminLogin from './pages/Admin/AdminLogin';
 import ErrorPage from "./components/ErrorPage";
+import OurTeamPage from "./pages/OurTeamPage";
 
 // Role Selection
 import Role from "./components/Role";
@@ -195,6 +196,7 @@ const App = () => {
           </Route>
 
           {/* 🚩 Standalone Pages */}
+          <Route path="/our-team" element={<OurTeamPage />} />
           <Route path="/error" element={<ErrorPage />} />
 
           {/* 🔍 404 Redirect */}

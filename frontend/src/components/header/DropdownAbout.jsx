@@ -26,7 +26,7 @@ const aboutItems = [
     icon: Users,
     title: "Our Team",
     desc: "Passionate developers & agriculture enthusiasts",
-    path: "/",
+    path: "/our-team",
   },
   {
     icon: Lightbulb,
@@ -48,7 +48,7 @@ const aboutItems = [
   },
 ];
 
-const DropdownAbout = ({ isMobile }) => {
+const DropdownAbout = ({ isMobile, onClose }) => {
   const navigate = useNavigate();
 
   if (isMobile) {
@@ -59,7 +59,10 @@ const DropdownAbout = ({ isMobile }) => {
           return (
             <div
               key={index}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                navigate(item.path);
+                if (onClose) onClose();
+              }}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer"
             >
               <Icon className="w-4 h-4 text-green-400" />

@@ -7,6 +7,7 @@ import { Mic, CloudSun, LineChart, Leaf, ArrowRight, MessageSquare, Send, User, 
 import axios from "axios";
 import { toast } from "react-toastify";
 import useUserStore from "../store/useUserStore";
+import Footer from "./Footer";
 
 const HomePage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -305,15 +306,8 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Modern Footer */}
-      <footer className="border-t border-zinc-900 bg-black pt-16 pb-8 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">{t("kisanMithr")}</span>
-          </div>
-          <p className="text-zinc-600 text-sm">{t("footerRights")}</p>
-        </div>
-      </footer>
+      {/* Professional Footer */}
+      <Footer />
 
     </div>
   );
