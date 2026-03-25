@@ -148,7 +148,7 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
               </button>
               {openSection === 'contact' && (
                 <div className="pl-4 animate-fadeIn">
-                  <DropdownContact isMobile={true} />
+                  <DropdownContact isMobile={true} onClose={onClose} />
                 </div>
               )}
             </div>

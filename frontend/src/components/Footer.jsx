@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../../src/assets/logo.jpg";
 import { 
   Mail, 
   Phone, 
@@ -7,7 +8,8 @@ import {
   Instagram, 
   Youtube, 
   Send, 
-  Leaf 
+  Leaf,
+  Github 
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useTranslation from "../hooks/useTranslation";
@@ -17,8 +19,8 @@ const Footer = () => {
   const { t } = useTranslation();
 
   const socialLinks = [
-    { icon: <Linkedin size={20} />, href: "#", label: "LinkedIn" },
-    { icon: <Instagram size={20} />, href: "#", label: "Instagram" },
+    { icon: <Linkedin size={20} />, href: "https://www.linkedin.com/in/g-vignesh-b6b6a2361/", label: "LinkedIn" },
+    { icon: <Github size={20} />, href: "https://github.com/GVignesh777", label: "GitHub" },
     { icon: <Youtube size={20} />, href: "#", label: "YouTube" },
   ];
 
@@ -27,7 +29,7 @@ const Footer = () => {
     { name: "Farmer Dashboard", path: "/" }, // Assuming landing has a way to navigate/role select
     { name: "Buyer Dashboard", path: "/buyer-dashboard" },
     { name: "Admin Panel", path: "/admin-login" },
-    { name: "Contact Us", path: "#" },
+    { name: "Contact Us", path: "/contact" },
   ];
 
   return (
@@ -44,7 +46,8 @@ const Footer = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                <Leaf className="text-green-400 w-6 h-6" />
+                {/* <Leaf className="text-green-400 w-6 h-6" /> */}
+                <img className="w-8 h-8" src={logo} alt="logo" />
               </div>
               <span className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-500">
                 Kisan Mithr
@@ -55,7 +58,7 @@ const Footer = () => {
             </p>
             
             {/* Newsletter Section */}
-            <div className="space-y-4 pt-4">
+            {/* <div className="space-y-4 pt-4">
               <h4 className="text-white font-semibold text-sm uppercase tracking-widest">{t("newsletterTitle") || "Newsletter"}</h4>
               <div className="flex gap-2">
                 <input 
@@ -67,7 +70,7 @@ const Footer = () => {
                   <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Quick Links */}
@@ -155,7 +158,12 @@ const Footer = () => {
             <div className="flex items-center gap-6">
               <a href="#" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">Privacy Policy</a>
               <div className="w-1 h-1 rounded-full bg-zinc-800"></div>
-              <a href="#" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">Terms & Conditions</a>
+              <button 
+                onClick={() => navigate('/terms')}
+                className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
+              >
+                Terms & Conditions
+              </button>
             </div>
           </div>
         </div>

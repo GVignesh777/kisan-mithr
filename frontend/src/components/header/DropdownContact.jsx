@@ -14,41 +14,41 @@ const contactItems = [
     icon: Phone,
     title: "Farmer Support",
     desc: "24/7 assistance for crop & platform queries",
-    path: "/assistant",
+    path: "/contact",
   },
   {
     icon: MessageCircle,
     title: "Help Center",
     desc: "Browse FAQs and user guides",
-    path: "/",
+    path: "/contact",
   },
   {
     icon: Mail,
     title: "Send Feedback",
     desc: "Share suggestions to improve the platform",
-    path: "/",
+    path: "/contact",
   },
   {
     icon: Handshake,
     title: "Partnerships",
     desc: "Collaborate with Kisan Mithr",
-    path: "/",
+    path: "/contact",
   },
   {
     icon: MapPin,
     title: "Our Location",
     desc: "Visit our regional support offices",
-    path: "/",
+    path: "/contact",
   },
   {
     icon: LifeBuoy,
     title: "Technical Support",
     desc: "Resolve account or system issues",
-    path: "/assistant",
+    path: "/contact",
   },
 ];
 
-const DropdownContact = ({ isMobile }) => {
+const DropdownContact = ({ isMobile, onClose }) => {
   const navigate = useNavigate();
 
   if (isMobile) {
@@ -59,7 +59,10 @@ const DropdownContact = ({ isMobile }) => {
           return (
             <div
               key={index}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                navigate(item.path);
+                if (onClose) onClose();
+              }}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50 transition-colors cursor-pointer"
             >
               <Icon className="w-4 h-4 text-green-400" />

@@ -22,6 +22,8 @@ import ResetPasswordHTML from "./pages/user-login/ResetPass";
 import AdminLogin from './pages/Admin/AdminLogin';
 import ErrorPage from "./components/ErrorPage";
 import OurTeamPage from "./pages/OurTeamPage";
+import ContactUsPage from "./pages/ContactUsPage";
+import TermsPage from "./pages/TermsPage";
 
 // Role Selection
 import Role from "./components/Role";
@@ -197,6 +199,8 @@ const App = () => {
 
           {/* 🚩 Standalone Pages */}
           <Route path="/our-team" element={<OurTeamPage />} />
+          <Route path="/contact" element={<ContactUsPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/error" element={<ErrorPage />} />
 
           {/* 🔍 404 Redirect */}

@@ -4,7 +4,7 @@ import emailjs from '@emailjs/browser';
  * Sends an email using EmailJS directly from the React frontend.
  * Ensure your EmailJS dashboard template expects {{name}} and {{email}} variables.
  * @param {Object} userData - Dynamic data mapping
- * @param {string} templateType - 'OTP' or 'FORGOT_PASSWORD'
+ * @param {string} templateType - 'OTP', 'FORGOT_PASSWORD', or 'CONTACT'
  */
 export const sendEmail = async (userData, templateType) => {
     // Graceful fallback: User asked for VITE_ but project uses Create React App (REACT_APP_)
@@ -16,6 +16,8 @@ export const sendEmail = async (userData, templateType) => {
         templateID = process.env.VITE_EMAILJS_OTP_TEMPLATE_ID || process.env.REACT_APP_EMAILJS_OTP_TEMPLATE_ID;
     } else if (templateType === 'FORGOT_PASSWORD') {
         templateID = process.env.VITE_EMAILJS_FORGOT_TEMPLATE_ID || process.env.REACT_APP_EMAILJS_FORGOT_TEMPLATE_ID;
+    } else if (templateType === 'CONTACT') {
+        templateID = process.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID || process.env.REACT_APP_EMAILJS_CONTACT_TEMPLATE_ID;
     } else {
         templateID = process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
     }

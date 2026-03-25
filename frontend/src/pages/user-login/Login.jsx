@@ -627,7 +627,12 @@ const Login = () => {
                     className="text-sm font-medium text-zinc-300"
                   >
                     I agree to the{" "}
-                    <a href="#" className="text-emerald-400 font-bold hover:underline">
+                    <a 
+                      href="/terms" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-emerald-400 font-bold hover:underline"
+                    >
                       Terms and Conditions
                     </a>{" "}
                     and Privacy Policy.

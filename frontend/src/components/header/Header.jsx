@@ -12,6 +12,7 @@ import DropdownContact from "./DropdownContact";
 import DropdownProfile from "./DropdownProfile";
 import useTranslation from "../../hooks/useTranslation";
 import { Menu } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import HomePageSidebar from "./HomePageSidebar";
 
 export default function Header() {
@@ -20,6 +21,11 @@ export default function Header() {
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  
+  const isTermsPage = location.pathname === "/terms";
+  const isGuest = !userData || Object.keys(userData).length === 0;
+  const showUserProfile = !isTermsPage || !isGuest;
   
   const userName = userData?.username || userData?.googleName || "Guest";
   const profilePic = userData?.profilePicture || userData?.googlePhoto;
@@ -170,27 +176,29 @@ export default function Header() {
             <LanguageSwitcher scrolled={scrolled} />
           </div>
 
-          <div className="relative group flex items-center justify-center cursor-pointer ml-1">
-            <div
-              className={`w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full border-2 transition-all duration-300 shadow-xl ${
-                scrolled ? "border-zinc-700 bg-zinc-900 group-hover:border-green-500/50" : "border-white/20 bg-black/40 backdrop-blur-md group-hover:border-green-400"
-              }`}
-            >
-              {profilePic ? (
-                <img
-                  src={profilePic}
-                  alt={userName}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/10 text-green-400 font-bold text-lg">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
-              )}
+          {showUserProfile && (
+            <div className="relative group flex items-center justify-center cursor-pointer ml-1">
+              <div
+                className={`w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full border-2 transition-all duration-300 shadow-xl ${
+                  scrolled ? "border-zinc-700 bg-zinc-900 group-hover:border-green-500/50" : "border-white/20 bg-black/40 backdrop-blur-md group-hover:border-green-400"
+                }`}
+              >
+                {profilePic ? (
+                  <img
+                    src={profilePic}
+                    alt={userName}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/10 text-green-400 font-bold text-lg">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <DropdownProfile />
             </div>
-            <DropdownProfile />
-          </div>
+          )}
 
           {/* Mobile Menu Button */}
           <button
