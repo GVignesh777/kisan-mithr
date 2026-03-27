@@ -60,6 +60,7 @@ const HomePage = () => {
 
   return (
     <div className="bg-zinc-950 min-h-screen font-sans selection:bg-green-500/30">
+      <Header />
       
       {/* Hero Section */}
       <div className="relative h-[100dvh] w-full flex flex-col justify-center overflow-hidden">
@@ -70,10 +71,6 @@ const HomePage = () => {
           style={{ backgroundImage: `url(${heroBG})` }}
         />
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/80 via-black/50 to-zinc-950 backdrop-blur-[2px]" />
-
-        <div className="z-50 absolute top-0 w-full object-top">
-          <Header />
-        </div>
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 flex flex-col items-center md:items-start text-center md:text-left mt-16 md:mt-24">

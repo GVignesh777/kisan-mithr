@@ -56,6 +56,7 @@ export default function Header() {
   }, []);
 
   return (
+    <>
     <header
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${
         scrolled
@@ -213,8 +214,8 @@ export default function Header() {
           </button>
         </div>
       </div>
-
-      <HomePageSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </header>
+    <HomePageSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+    </>
   );
 }
