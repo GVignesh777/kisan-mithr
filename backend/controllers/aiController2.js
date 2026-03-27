@@ -175,9 +175,13 @@ let edgeTtsClient = null;
 
 exports.generateAudio = async (req, res) => {
     try {
-        if (!elevenlabs) {
-            elevenlabs = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
-        }
+        // Force reload .env values from absolute path in case server is started from root
+        dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
+        
+        // Re-initialize client each time to ensure the latest API key is used
+        const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
+        console.log(`[TTS] Initializing ElevenLabs with Key Length: ${apiKey?.length || 0}`);
+        elevenlabs = new ElevenLabsClient({ apiKey });
 
         const { text, language, voice } = req.body;
         
@@ -261,7 +265,8 @@ exports.generateAudio = async (req, res) => {
                  res.end();
             }
         } catch (elevenError) {
-            console.error('ElevenLabs failed or quota reached. Falling back to Edge-TTS:', elevenError.message);
+            console.error('ElevenLabs failed. Status:', elevenError.status, 'Message:', elevenError.message);
+            if (elevenError.body) console.error('ElevenLabs Error Body:', JSON.stringify(elevenError.body, null, 2));
             
             if (!edgeTtsClient) {
                 // edge-tts-universal uses a constructor with (text, voice, options)
