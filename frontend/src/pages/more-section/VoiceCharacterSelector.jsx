@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const voices = [
-  { id: 'default', name: 'Standard', description: 'Assistant', icon: '👤' },
-  { id: 'Tiya Maria', name: 'Tiya Maria', description: 'Horror Storyteller', icon: '🕯️' },
+  { id: 'en-IN', name: 'English', voice: 'Sarah', description: 'Indian English Expert', icon: '🇬🇧' },
+  { id: 'hi-IN', name: 'Hindi', voice: 'Hindi Expert', description: 'Specialized Hindi Voice', icon: '🇮🇳' },
+  { id: 'te-IN', name: 'Telugu', voice: 'Telugu Expert', description: 'Specialized Telugu Voice', icon: '🇮🇳' },
 ];
 
-const VoiceCharacterSelector = ({ selectedVoice, setSelectedVoice }) => {
+const VoiceCharacterSelector = ({ language, setLanguage, setSelectedVoice }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -20,7 +21,7 @@ const VoiceCharacterSelector = ({ selectedVoice, setSelectedVoice }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const currentVoice = voices.find((v) => v.id === selectedVoice) || voices[0];
+  const currentVoice = voices.find((v) => v.id === language) || voices[0];
 
   return (
     <div className="relative inline-block text-left z-50 ml-2" ref={dropdownRef}>
@@ -35,7 +36,7 @@ const VoiceCharacterSelector = ({ selectedVoice, setSelectedVoice }) => {
           <span className="text-lg drop-shadow-sm">{currentVoice.icon}</span>
           <div className="flex flex-col items-start leading-none gap-1">
              <span className="text-white font-medium text-xs tracking-tight">{currentVoice.name}</span>
-             <span className="text-[9px] text-zinc-500 uppercase tracking-tighter">Voice</span>
+             <span className="text-[9px] text-zinc-500 uppercase tracking-tighter">Voice Mode</span>
           </div>
         </div>
         <motion.div
@@ -59,15 +60,16 @@ const VoiceCharacterSelector = ({ selectedVoice, setSelectedVoice }) => {
           >
             <div className="p-1.5" role="menu">
               <div className="px-3 py-2 text-[10px] text-zinc-500 uppercase font-bold tracking-widest border-b border-white/5 mb-1">
-                 Select Voice Profile
+                 Select Voice Mode
               </div>
               {voices.map((v) => {
-                const isSelected = selectedVoice === v.id;
+                const isSelected = language === v.id;
                 return (
                   <button
                     key={v.id}
                     onClick={() => {
-                      setSelectedVoice(v.id);
+                      setLanguage(v.id);
+                      setSelectedVoice(v.voice);
                       setIsOpen(false);
                     }}
                     className={`w-full text-left flex items-center justify-between rounded-xl px-3 py-2.5 transition-colors duration-200 mb-1 ${
@@ -84,7 +86,7 @@ const VoiceCharacterSelector = ({ selectedVoice, setSelectedVoice }) => {
                           {v.name}
                         </span>
                         <span className="text-[10px] text-zinc-500 font-normal">
-                          {v.description}
+                          {v.voice} Expert
                         </span>
                       </div>
                     </div>

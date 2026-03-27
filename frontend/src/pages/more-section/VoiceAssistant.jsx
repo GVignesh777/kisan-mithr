@@ -2,17 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './Sidebar';
 import ChatWindow from '../../components/ChatWindow';
 import InputArea from './InputArea';
-import LanguageSelector from './LanguageSelector';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
-import { Menu, LayoutDashboard } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { toast } from 'react-toastify';
 import useUserStore from '../../store/useUserStore';
 
 const VoiceAssistant = () => {
     const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
     const [language, setLanguage] = useState('en-IN');
-    const [selectedVoice, setSelectedVoice] = useState('default');
+    const [selectedVoice, setSelectedVoice] = useState('George');
     const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
     const [transcript, setTranscript] = useState('');
     const [audioUnlocked, setAudioUnlocked] = useState(false);
@@ -102,8 +100,9 @@ const VoiceAssistant = () => {
 
     // Cleanup speech/audio on unmount to prevent ghost speaking
     useEffect(() => {
+        const currentSynth = synthRef.current;
         return () => {
-            synthRef.current?.cancel();
+            currentSynth?.cancel();
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.src = "";
@@ -121,7 +120,7 @@ const VoiceAssistant = () => {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = languageRef.current;
+        recognition.lang = language;
         recognitionRef.current = recognition;
 
         const stopAndProcess = () => {
@@ -220,10 +219,14 @@ const VoiceAssistant = () => {
 
         return () => {
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-            try { recognition.abort(); isStartedRef.current = false; } catch (e) { }
+            try { 
+                recognition.onend = null; 
+                recognition.abort(); 
+                isStartedRef.current = false; 
+            } catch (e) { }
         }
 
-    }, [audioUnlocked]);
+    }, [audioUnlocked, language, isMobile]);
 
     // State Machine Observer: Reacts to state changes with safe microphone transitions
     useEffect(() => {
@@ -670,8 +673,11 @@ const VoiceAssistant = () => {
 
                     {/* Right Controls */}
                     <div className="flex items-center gap-1.5 sm:gap-3 z-10">
-                        <VoiceCharacterSelector selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
-                        <LanguageSelector language={language} setLanguage={setLanguage} />
+                        <VoiceCharacterSelector 
+                            language={language} 
+                            setLanguage={setLanguage} 
+                            setSelectedVoice={setSelectedVoice} 
+                        />
                     </div>
                 </header>
 

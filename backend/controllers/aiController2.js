@@ -225,24 +225,81 @@ exports.generateAudio = async (req, res) => {
             .replace(/\s+/g, " ")
             .trim(); 
 
-        // Default Voices
-        let voiceId = "NFG5qt843uXKj4pFvR7C"; // Bella (English)
+        // Default Voices (Verified for Free Tier)
+        let voiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah (English / Generic)
         
         if (effectiveLang === 'hi-IN' || effectiveLang === 'Hindi') {
-             voiceId = "pNInz6obbfDQGcgMyIGC"; // Adam (Hindi)
+             voiceId = "LEWCqaZJ8aD94fSLZit1"; // Hindi Expert (User Provided ID)
         } else if (effectiveLang === 'te-IN' || effectiveLang === 'Telugu') {
-             voiceId = "RXe6OFmxoC0nlSWpuCDy"; // Aman (Telugu)
+             voiceId = "HH8sIQq8WOcER3Nu118i"; // Telugu Expert (User Provided ID)
         }
 
         // Voice Overrides
-        if (voice === 'Tiya Maria') {
-            voiceId = "RKj1DIXprh8zdvjllfhJ"; // Tiya Maria - Horror Storyteller
+        if (voice === 'George') voiceId = "JBFqnCBsd6RMkjVDRZzb";
+        if (voice === 'Sarah') voiceId = "EXAVITQu4vr4xnSDxMaL";
+        if (voice === 'Charlie') voiceId = "IKne3meq5aSn9XLyUdCD";
+        if (voice === 'Hindi Expert') voiceId = "LEWCqaZJ8aD94fSLZit1";
+        if (voice === 'Telugu Expert') voiceId = "HH8sIQq8WOcER3Nu118i";
+        
+
+        // Level 1: Sarvam AI (Primary)
+        if (process.env.SARVAM_API_KEY) {
+            try {
+                console.log(`[TTS] Trying Sarvam AI for ${effectiveLang}...`);
+                
+                // Chunk text into <= 500 character segments (Sarvam Limit)
+                const maxChars = 450; 
+                const textChunks = [];
+                let remainingText = cleanTextForTts;
+                
+                while (remainingText.length > 0) {
+                    if (remainingText.length <= maxChars) {
+                        textChunks.push(remainingText);
+                        break;
+                    }
+                    
+                    // Try to find a good break point (period, space)
+                    let breakPoint = remainingText.lastIndexOf('. ', maxChars);
+                    if (breakPoint === -1) breakPoint = remainingText.lastIndexOf(' ', maxChars);
+                    if (breakPoint === -1) breakPoint = maxChars;
+                    
+                    textChunks.push(remainingText.substring(0, breakPoint).trim());
+                    remainingText = remainingText.substring(breakPoint).trim();
+                }
+
+                const audioBuffers = [];
+                for (const chunk of textChunks) {
+                    console.log(`[TTS] Requesting Sarvam chunk (${chunk.length} chars)`);
+                    const sarvamResponse = await axios.post('https://api.sarvam.ai/text-to-speech', {
+                        inputs: [chunk],
+                        target_language_code: effectiveLang === 'en-IN' ? 'en-IN' : (effectiveLang === 'hi-IN' ? 'hi-IN' : 'te-IN'),
+                        speaker: 'ritu',
+                        model: 'bulbul:v3',
+                        audio_format: 'mp3',
+                        sample_rate: 44100
+                    }, {
+                        headers: { 'api-subscription-key': process.env.SARVAM_API_KEY }
+                    });
+
+                    if (sarvamResponse.data && sarvamResponse.data.audios && sarvamResponse.data.audios[0]) {
+                        audioBuffers.push(Buffer.from(sarvamResponse.data.audios[0], 'base64'));
+                    }
+                }
+
+                if (audioBuffers.length > 0) {
+                    const finalBuffer = Buffer.concat(audioBuffers);
+                    res.setHeader('Content-Type', 'audio/mpeg');
+                    return res.send(finalBuffer);
+                }
+            } catch (sarvamError) {
+                console.error('Sarvam AI failed:', sarvamError.response?.data || sarvamError.message);
+                // Continue to Level 2
+            }
         }
 
+        // Level 2: ElevenLabs (Secondary)
         try {
-            if (!elevenlabs) {
-                elevenlabs = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
-            }
+            console.log(`[TTS] Trying ElevenLabs. Voice ID: "${voiceId}" | Model: "eleven_multilingual_v2"`);
 
             const audioStream = await elevenlabs.generate({
                 voice: voiceId,
@@ -266,14 +323,10 @@ exports.generateAudio = async (req, res) => {
             }
         } catch (elevenError) {
             console.error('ElevenLabs failed. Status:', elevenError.status, 'Message:', elevenError.message);
-            if (elevenError.body) console.error('ElevenLabs Error Body:', JSON.stringify(elevenError.body, null, 2));
             
-            if (!edgeTtsClient) {
-                // edge-tts-universal uses a constructor with (text, voice, options)
-                // but we can create a minimalist instance and then call synthesize
-                console.log(`[TTS] Using Edge-TTS as fallback for ${effectiveLang}`);
-            }
-
+            // Level 3: Edge-TTS (Tertiary Fallback)
+            console.log(`[TTS] Falling back to Edge-TTS for ${effectiveLang}`);
+            
             // Map languages to high-quality Microsoft Edge voices
             let edgeVoice = "en-IN-PrabhatNeural"; // Default Indian English
             if (effectiveLang === 'hi-IN' || effectiveLang === 'Hindi') {
