@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import useUserStore from '../../store/useUserStore';
 
 const FarmProfileForm = () => {
-    const TEMP_USER_ID = "69a682c84987830f3e21ef14"; // Fixed login test ID
+    const { user } = useUserStore();
+    const userId = user?._id || user?.id;
     const [profile, setProfile] = useState({
         soilType: 'Unknown',
         irrigationMethod: 'Unknown',
@@ -12,7 +14,8 @@ const FarmProfileForm = () => {
 
     useEffect(() => {
         // Fetch existing profile on mount
-        fetch(`${process.env.REACT_APP_API_URL}/api/users/${TEMP_USER_ID}/farmProfile`)
+        if (!userId) return;
+        fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/farmProfile`)
             .then(res => res.json())
             .then(data => {
                 if(data.farmProfile) setProfile(data.farmProfile);
@@ -26,8 +29,12 @@ const FarmProfileForm = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        if (!userId) {
+            alert("No user ID found. Please log in.");
+            return;
+        }
         try {
-            await fetch(`${process.env.REACT_APP_API_URL}/api/users/${TEMP_USER_ID}/farmProfile`, {
+            await fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}/farmProfile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profile)

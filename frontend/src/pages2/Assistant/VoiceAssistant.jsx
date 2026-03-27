@@ -4,6 +4,7 @@ import ChatWindow from '../../components/ChatWindow';
 import InputArea from './InputArea';
 import LanguageSelector from './LanguageSelector';
 import useLanguageStore from '../../store/useLanguageStore';
+import useUserStore from '../../store/useUserStore';
 
 const VoiceAssistant = () => {
   const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
@@ -32,11 +33,13 @@ const VoiceAssistant = () => {
   const synthRef = useRef(window.speechSynthesis);
   const audioRef = useRef(null);
 
-  const TEMP_USER_ID = "69a682c84987830f3e21ef14"; // Live login ID mock
+  const { user } = useUserStore();
+  const userId = user?._id || user?.id;
 
   // Load from MongoDB initially
   useEffect(() => {
-     fetch(`${process.env.REACT_APP_API_URL}/api/chats/${TEMP_USER_ID}`)
+     if (!userId) return;
+     fetch(`${process.env.REACT_APP_API_URL}/api/chats/${userId}`)
         .then(res => res.json())
         .then(data => {
             if (data.chats && data.chats.length > 0) {
@@ -199,7 +202,7 @@ const VoiceAssistant = () => {
          fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ userId: TEMP_USER_ID, chatId: id, title: newTitle, messages: chatToUpdate.messages })
+             body: JSON.stringify({ userId: userId, chatId: id, title: newTitle, messages: chatToUpdate.messages })
          }).catch(e => console.log('Error updating title:', e));
      }
   };
@@ -224,11 +227,12 @@ const VoiceAssistant = () => {
       
       // We pass the chatId to the backend (mapped logically from _id or explicitly passed)
       // The backend will create a new doc if _id isn't found, or update if it exists.
+      if (!userId || userId.length !== 24) return;
       fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-              userId: TEMP_USER_ID,
+              userId: userId,
               chatId: chatIdToSync.length === 24 ? chatIdToSync : null, // only send _id proxy if it's a valid 24 hex char Mongo ID 
               title: chatData.title || userTextPreviewRef.current,
               messages: chatData.messages
@@ -298,7 +302,7 @@ const VoiceAssistant = () => {
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ask-ai`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userMessage: userText, language: langMap[language], userId: TEMP_USER_ID })
+              body: JSON.stringify({ userMessage: userText, language: langMap[language], userId: userId })
           });
 
           if (!response.ok) throw new Error("Failed to connect");

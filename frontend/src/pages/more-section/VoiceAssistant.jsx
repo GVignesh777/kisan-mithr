@@ -7,6 +7,7 @@ import VoiceCharacterSelector from './VoiceCharacterSelector';
 import { Menu, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import useUserStore from '../../store/useUserStore';
 
 const VoiceAssistant = () => {
     const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
@@ -27,7 +28,8 @@ const VoiceAssistant = () => {
 
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
-    const TEMP_USER_ID = "69a682c84987830f3e21ef14";
+    const { user } = useUserStore();
+    const userId = user?._id || user?.id;
 
     // Dynamic Refs for SpeechRecognition handlers to avoid closure staleness and re-renders
     const assistantStateRef = useRef(assistantState);
@@ -82,7 +84,8 @@ const VoiceAssistant = () => {
 
     // Load from MongoDB initially
     useEffect(() => {
-        fetch(`${process.env.REACT_APP_API_URL}/api/chats/${TEMP_USER_ID}`)
+        if (!userId) return;
+        fetch(`${process.env.REACT_APP_API_URL}/api/chats/${userId}`)
             .then(res => res.json())
             .then(data => {
                 if (data.chats && data.chats.length > 0) {
@@ -324,7 +327,7 @@ const VoiceAssistant = () => {
             fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: TEMP_USER_ID, chatId: id, title: newTitle, messages: chatToUpdate.messages })
+                body: JSON.stringify({ userId: userId, chatId: id, title: newTitle, messages: chatToUpdate.messages })
             }).catch(e => console.log('Error updating title:', e));
         }
     };
@@ -348,8 +351,8 @@ const VoiceAssistant = () => {
         if (!chatData) return;
 
         // Ensure the temp user id is 24 hex characters so Mongoose ObjectId casting doesn't fail
-        // "69a682c84987830f3e21ef14" is 24 chars, which is fine, but in case it changes:
-        const safeUserId = TEMP_USER_ID.length === 24 ? TEMP_USER_ID : "000000000000000000000000";
+        if (!userId || userId.length !== 24) return;
+        const safeUserId = userId;
 
         // We pass the chatId to the backend (mapped logically from _id or explicitly passed)
         // The backend will create a new doc if _id isn't found, or update if it exists.
@@ -444,7 +447,7 @@ const VoiceAssistant = () => {
                 body: JSON.stringify({
                     message: cleanUserText,
                     language: langMap[language],
-                    userId: TEMP_USER_ID,
+                    userId: userId,
                     chatId: isMongoId ? syncId : null
                 }),
                 signal: controller.signal
