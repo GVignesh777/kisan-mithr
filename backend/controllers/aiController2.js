@@ -6,6 +6,7 @@ const axios = require('axios');
 const { EdgeTTS } = require('edge-tts-universal');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 dotenv.config();
 
@@ -13,23 +14,40 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
+const Conversation = require('../models/Conversation');
+
 exports.askAI = async (req, res) => {
     try {
-        const { userMessage, language, userId } = req.body;
+        const { userMessage, message, language, userId, chatId } = req.body;
+        const finalMessage = message || userMessage;
 
-        if (!userMessage) {
-            return res.status(400).json({ error: 'userMessage is required' });
+        if (!finalMessage) {
+            return res.status(400).json({ error: 'message or userMessage is required' });
         }
 
-        // Determine the target language context for the prompt
+        // Determine language context
         let langContext = "English";
         if (language === "te-IN" || language === "Telugu") langContext = "Telugu";
         else if (language === "hi-IN" || language === "Hindi") langContext = "Hindi";
 
-        // Fetch Farm Context if User is present
+        // 1. Fetch History Memory (Gemini-style session persistence)
+        let history = [];
+        if (chatId && mongoose.Types.ObjectId.isValid(chatId)) {
+            try {
+                const conv = await Conversation.findById(chatId);
+                if (conv && conv.messages) {
+                    // Map history to OpenAI/Groq format (user/assistant)
+                    history = conv.messages.slice(-6).map(m => ({
+                        role: m.role === 'ai' ? 'assistant' : m.role,
+                        content: m.content
+                    }));
+                }
+            } catch (e) { console.log("History fetch failed:", e); }
+        }
+
+        // 2. Fetch Farm Context
         let farmContextString = "No farm profile available for this user.";
         let userLocation = "Unknown";
-
         if (userId) {
             try {
                 const user = await User.findById(userId);
@@ -46,7 +64,7 @@ exports.askAI = async (req, res) => {
             } catch(e) { console.log('Error fetching user for AI context:', e); }
         }
 
-        // Live Weather Context Injection
+        // 3. Live Context (Weather & Market)
         let weatherContextString = `Weather data unavailable.`;
         try {
             const loc = userLocation !== "Unknown" ? userLocation : "Warangal";
@@ -57,11 +75,8 @@ exports.askAI = async (req, res) => {
                 - Today: ${wData.current.temp}°C, Condition: ${wData.current.condition}, ${wData.current.rainProb}% Rain Prob, Wind ${wData.current.windSpeed} km/h.
                 - Tomorrow: ${wData.forecast[1].temp}°C, Condition: ${wData.forecast[1].condition}, ${wData.forecast[1].rainProb}% Rain Prob.`;
             }
-        } catch (e) {
-            console.log("Failed to fetch weather for AI:", e.message);
-        }
+        } catch (e) {}
 
-        // Live Market Prices Context Injection
         let marketContextString = `Market data unavailable.`;
         try {
             const mRes = await axios.get(`http://localhost:5001/api/market`);
@@ -71,58 +86,53 @@ exports.askAI = async (req, res) => {
                 marketContextString = `CURRENT LIVE MARKET PRICES:
                 ${pricesLines}`;
             }
-        } catch (e) {
-            console.log("Failed to fetch market data for AI:", e.message);
-        }
+        } catch (e) {}
 
-        const systemPrompt = `You are "Kisan Mithr", an intelligent AI Voice Assistant designed to help farmers in India, especially in Telangana and Andhra Pradesh.
-Your goal is to assist farmers with clear, practical, and easy-to-understand information related to agriculture.
+        // 4. NEW CORE BEHAVIOR & SYSTEM PROMPT (Gemini Voice Style)
+        const systemPrompt = `You are "Kisan Mithr", an advanced AI voice assistant for farmers in India.
+Your behavior should be like Google Gemini's voice mode: conversational, clear, intelligent, and highly supportive.
 
 --------------------------------------------------
-CONTEXT (Weather, Market, Farm Profile)
+🧠 CORE RULES
 --------------------------------------------------
-${farmContextString}
-${weatherContextString}
-${marketContextString}
+- Be professional yet friendly. Use "natural NLP" suitable for human conversations.
+- Understand user intent even if input is messy or incomplete.
+- Always refer to context memory: if user asks "What about rice?", follow up based on previous topics.
+- NEVER use markdown symbols like #, *, or **. Use natural spoken headings.
+- Keep sentences short, rhythmic, and optimized for Speech synthesis.
 
-IMPORTANT BEHAVIOR RULES:
-1. Speak like a friendly human helper, not like a robot.
-2. Use simple language that farmers can easily understand.
-3. Keep answers short, practical, and helpful.
-4. If possible, speak in conversational style like talking to a farmer.
-5. Avoid complicated scientific terms.
-6. If you are not fully sure, politely say that the farmer should consult a local agriculture officer or plant doctor.
+--------------------------------------------------
+🎯 CONTEXT & DOMAIN
+--------------------------------------------------
+FARM PROFILE: ${farmContextString}
+WEATHER: ${weatherContextString}
+MARKET: ${marketContextString}
 
-VOICE STYLE:
-- Talk naturally like a human assistant. Sound supportive and respectful.
-- Use short sentences suitable for voice output. Do not give very long paragraphs.
+- Prioritize agriculture: schemes, techniques, pest control, market trends.
+- If unsure, say: "I’m not completely sure, but here’s what I can suggest..."
+- LANGUAGE TARGET: ${langContext}. Speak in a blend (Hinglish/Tenglish) if that's what the user prefers.
 
-LANGUAGE HANDLING:
-- If the farmer asks in English, reply in simple English.
-- If the farmer asks in Telugu, reply in simple Telugu.
-- If the farmer asks in Hindi, reply in Hindi.
-- If the farmer uses a mix of languages (e.g., English-Telugu, English-Hindi, or Telugu-Hindi), identify the primary language they are most comfortable with and reply in that language, or use a natural "Hinglish" or "Tenglish" blend that sounds like a friendly human conversion.
-- Always match the farmer's tone and level of comfort. Current detected language target: ${langContext}.
-
-CROP PLANNING & COSTS:
-- If a farmer asks about growing a specific crop or plant, provide a breakdown of maintenance costs (seeds, labor, fertilizer), potential profit, and risks.
-
-IMPORTANT SAFETY MESSAGE:
-When giving pest or disease treatment advice, always include: "AI advice may not always be perfect. Please consult a local agriculture officer or plant doctor before using chemicals."
-
-Do not sound robotic. Respond in a natural conversational way. Focus on helping farmers quickly.`;
+--------------------------------------------------
+🎤 RESPONSE FORMATTING (VOICE FIRST)
+--------------------------------------------------
+- Use simple headings like: "Here is the information about..." or "Step 1 is...".
+- Use bullet points only if the query is very informational.
+- Avoid symbols. Use clean spacing.
+- SAFETY: For chemicals, add "Please consult a local plant doctor before use".
+- GOAL: Be an intelligent partner, not just a bot.`;
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
+                ...history,
+                { role: 'user', content: finalMessage }
             ],
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.6,
-            max_tokens: 500,
+            temperature: 0.65,
+            max_tokens: 600,
         });
 
-        const responseText = chatCompletion.choices[0]?.message?.content || "I'm sorry, I couldn't process your request at the moment.";
+        const responseText = chatCompletion.choices[0]?.message?.content || "I am currently unable to process your request. Please try again.";
 
         res.json({ response: responseText });
     } catch (error) {
