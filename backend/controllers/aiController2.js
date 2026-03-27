@@ -173,6 +173,25 @@ Your goal is to act as a secure, personalized, agriculture-only voice assistant.
 let elevenlabs = null;
 let edgeTtsClient = null;
 
+// Helper to create a valid WAV header for raw PCM data
+const createWavHeader = (dataLength, sampleRate = 16000) => {
+    const header = Buffer.alloc(44);
+    header.write("RIFF", 0);
+    header.writeUInt32LE(dataLength + 36, 4); // Total file size - 8
+    header.write("WAVE", 8);
+    header.write("fmt ", 12);
+    header.writeUInt32LE(16, 16); // Header size
+    header.writeUInt16LE(1, 20); // PCM format
+    header.writeUInt16LE(1, 22); // Mono
+    header.writeUInt32LE(sampleRate, 24);
+    header.writeUInt32LE(sampleRate * 2, 28); // Byte rate
+    header.writeUInt16LE(2, 32); // Block align
+    header.writeUInt16LE(16, 34); // Bits per sample
+    header.write("data", 36);
+    header.writeUInt32LE(dataLength, 40);
+    return header;
+};
+
 exports.generateAudio = async (req, res) => {
     try {
         // Force reload .env values from absolute path in case server is started from root
@@ -267,29 +286,35 @@ exports.generateAudio = async (req, res) => {
                     remainingText = remainingText.substring(breakPoint).trim();
                 }
 
-                const audioBuffers = [];
+                const pcmBuffers = [];
+                const sampleRate = 16000;
+
                 for (const chunk of textChunks) {
-                    console.log(`[TTS] Requesting Sarvam chunk (${chunk.length} chars)`);
+                    console.log(`[TTS] Requesting Sarvam PCM chunk (${chunk.length} chars)`);
                     const sarvamResponse = await axios.post('https://api.sarvam.ai/text-to-speech', {
                         inputs: [chunk],
                         target_language_code: effectiveLang === 'en-IN' ? 'en-IN' : (effectiveLang === 'hi-IN' ? 'hi-IN' : 'te-IN'),
                         speaker: 'ritu',
                         model: 'bulbul:v3',
-                        audio_format: 'mp3',
-                        sample_rate: 44100
+                        audio_format: 'linear16', // Raw PCM for perfect concatenation
+                        sample_rate: sampleRate
                     }, {
                         headers: { 'api-subscription-key': process.env.SARVAM_API_KEY }
                     });
 
                     if (sarvamResponse.data && sarvamResponse.data.audios && sarvamResponse.data.audios[0]) {
-                        audioBuffers.push(Buffer.from(sarvamResponse.data.audios[0], 'base64'));
+                        pcmBuffers.push(Buffer.from(sarvamResponse.data.audios[0], 'base64'));
                     }
                 }
 
-                if (audioBuffers.length > 0) {
-                    const finalBuffer = Buffer.concat(audioBuffers);
-                    res.setHeader('Content-Type', 'audio/mpeg');
-                    return res.send(finalBuffer);
+                if (pcmBuffers.length > 0) {
+                    const combinedPcm = Buffer.concat(pcmBuffers);
+                    const wavHeader = createWavHeader(combinedPcm.length, sampleRate);
+                    const finalWav = Buffer.concat([wavHeader, combinedPcm]);
+                    
+                    console.log(`[TTS] Sarvam Success. Total Audio Size: ${finalWav.length} bytes`);
+                    res.setHeader('Content-Type', 'audio/wav');
+                    return res.send(finalWav);
                 }
             } catch (sarvamError) {
                 console.error('Sarvam AI failed:', sarvamError.response?.data || sarvamError.message);
