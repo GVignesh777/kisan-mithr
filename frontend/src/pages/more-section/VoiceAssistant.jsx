@@ -207,6 +207,23 @@ const VoiceAssistant = () => {
 
     }, [audioUnlocked]); // ONLY re-run when global audio unlock occurs
 
+    // Auto-Restart Observer: Ensures mic reactivates for wake-word after AI finishes speaking
+    useEffect(() => {
+        if (assistantState === 'idle' && audioUnlocked) {
+            console.log("Assistant is idle. Re-activating unified listener...");
+            try {
+                // We use a small delay to ensure any previous processes have fully released the mic
+                setTimeout(() => {
+                    if (assistantStateRef.current === 'idle') {
+                        recognitionRef.current?.start();
+                    }
+                }, 500);
+            } catch (e) {
+                // Already started or busy, ignore
+            }
+        }
+    }, [assistantState, audioUnlocked]);
+
     // Browser Audio & TTS Unlock Mechanism
     // Browsers block autoplaying Audio and SpeechSynthesis until the user interacts with the document.
     const unlockAudioContext = () => {
