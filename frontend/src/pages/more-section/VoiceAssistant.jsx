@@ -34,11 +34,38 @@ const VoiceAssistant = () => {
     const languageRef = useRef(language);
     const audioUnlockedRef = useRef(audioUnlocked);
     const silenceTimeoutRef = useRef(null);
+    const isStartedRef = useRef(false); // New: Prevent InvalidStateError
 
     // Update refs whenever state changes
     useEffect(() => { assistantStateRef.current = assistantState; }, [assistantState]);
     useEffect(() => { languageRef.current = language; }, [language]);
     useEffect(() => { audioUnlockedRef.current = audioUnlocked; }, [audioUnlocked]);
+
+    // Safe Start/Stop helpers for SpeechRecognition
+    const safeStart = () => {
+        if (recognitionRef.current && !isStartedRef.current && audioUnlockedRef.current) {
+            try {
+                recognitionRef.current.start();
+                // Note: isStartedRef will be set to true in onstart event for accuracy
+            } catch (e) {
+                console.error("SafeStart Trigger Error:", e);
+                // If it's already started, just sync our ref
+                if (e.message?.includes('already started')) isStartedRef.current = true;
+            }
+        }
+    };
+
+    const safeStop = () => {
+        if (recognitionRef.current && isStartedRef.current) {
+            try {
+                recognitionRef.current.stop();
+                // Note: isStartedRef will be set to false in onend event for accuracy
+            } catch (e) {
+                console.error("SafeStop Trigger Error:", e);
+                if (e.message?.includes('not started')) isStartedRef.current = false;
+            }
+        }
+    };
 
     // Simple Mobile Detection to resolve mic occupancy conflicts
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -82,12 +109,12 @@ const VoiceAssistant = () => {
         };
     }, []);
 
-    // Unified Speech Recognition Logic (Stabilized & Silence-Aware)
+    // Unified Speech Recognition Logic (Fresh Refactor: Safe & Sequential)
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition || !audioUnlocked) return;
 
-        // One Single Instance, started ONCE
+        // Initialize ONE persistent instance
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
@@ -95,10 +122,8 @@ const VoiceAssistant = () => {
         recognitionRef.current = recognition;
 
         const stopAndProcess = () => {
-            console.log("Silence detected. Stopping recognition for processing...");
-            if (recognitionRef.current) {
-                try { recognitionRef.current.stop(); } catch(e) {}
-            }
+            console.log("Silence detected. Stopping for processing...");
+            safeStop();
         };
 
         recognition.onresult = (event) => {
@@ -107,23 +132,21 @@ const VoiceAssistant = () => {
             const currentResult = results[lastIndex][0].transcript.toLowerCase();
             const currentState = assistantStateRef.current;
 
-            // Clear any pending silence timer
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
 
-            // STATE A: IDLE (Wake Word Detection)
+            // Wake Word Handling
             if (currentState === 'idle') {
                 if (currentResult.includes('hey kisan') || currentResult.includes('kisan')) {
                     console.log("Wake word detected:", currentResult);
                     const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
                     beep.volume = 0.2;
                     beep.play().catch(() => { });
-
                     setInputMode('voice');
                     setTranscript('');
                     setAssistantState('listening');
                 }
             }
-            // STATE B: LISTENING (Command Transcript)
+            // Command Capture 
             else if (currentState === 'listening') {
                 let finalTrans = '';
                 let interimTrans = '';
@@ -132,15 +155,16 @@ const VoiceAssistant = () => {
                     else interimTrans += results[i][0].transcript;
                 }
                 setTranscript(finalTrans || interimTrans);
-
-                // Start silence timer: if no new result for 2.5s, auto-stop to trigger thinking
+                // 2.5s Silence Auto-Stop
                 silenceTimeoutRef.current = setTimeout(stopAndProcess, 2500);
             }
         };
 
         recognition.onstart = async () => {
-            console.log("Unified Recognition ONSTART. State:", assistantStateRef.current);
-            // Only use MediaRecorder (Whisper) on Desktop to avoid mobile mic conflicts
+            console.log("Recognition STARTED. State:", assistantStateRef.current);
+            isStartedRef.current = true;
+
+            // MediaRecorder (Whisper) ONLY on Desktop to avoid mobile conflicts
             if (assistantStateRef.current === 'listening' && !isMobile) {
                 audioChunksRef.current = [];
                 try {
@@ -150,21 +174,19 @@ const VoiceAssistant = () => {
                         if (e.data.size > 0) audioChunksRef.current.push(e.data);
                     };
                     mediaRecorderRef.current.start();
-                    console.log("MediaRecorder started for Whisper fallback.");
+                    console.log("Desktop MediaRecorder active.");
                 } catch (err) {
-                    console.error("Error starting MediaRecorder:", err);
+                    console.error("MediaRecorder start failed:", err);
                 }
             }
         };
 
         recognition.onend = () => {
-            const currentState = assistantStateRef.current;
-            console.log("Unified Recognition ONEND. State:", currentState);
-
-            // Clear timer on end
+            console.log("Recognition ENDED. State:", assistantStateRef.current);
+            isStartedRef.current = false;
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
 
-            // If we were listening, transition to thinking
+            const currentState = assistantStateRef.current;
             if (currentState === 'listening') {
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                     mediaRecorderRef.current.stop();
@@ -172,24 +194,17 @@ const VoiceAssistant = () => {
                 setAssistantState('thinking');
             }
             
-            // Auto-restart logic IF session ended unexpectedly and we are not busy
-            if (audioUnlockedRef.current && currentState !== 'speaking' && currentState !== 'thinking') {
-                setTimeout(() => {
-                    try { 
-                        if (assistantStateRef.current !== 'speaking' && assistantStateRef.current !== 'thinking') {
-                            recognition.start(); 
-                        }
-                    } catch (e) { }
-                }, 400);
+            // Auto-restart if we are idle and audio is still unlocked
+            if (audioUnlockedRef.current && currentState === 'idle') {
+                setTimeout(safeStart, 400);
             }
         };
 
         recognition.onerror = (e) => {
             const errorMsg = e.error || "unknown";
             if (errorMsg !== 'no-speech' && errorMsg !== 'aborted') {
-                console.error(`Unified Recognition Error (${errorMsg})`, e);
+                console.error(`Recognition Error (${errorMsg})`, e);
             }
-
             if (assistantStateRef.current === 'listening') {
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                     mediaRecorderRef.current.stop();
@@ -198,29 +213,31 @@ const VoiceAssistant = () => {
             }
         };
 
-        try { recognition.start(); } catch (e) { }
+        safeStart();
 
         return () => {
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
-            try { recognition.abort(); } catch (e) { }
+            try { recognition.abort(); isStartedRef.current = false; } catch (e) { }
         }
 
-    }, [audioUnlocked]); // ONLY re-run when global audio unlock occurs
+    }, [audioUnlocked]);
 
-    // Auto-Restart Observer: Ensures mic reactivates for wake-word after AI finishes speaking
+    // State Machine Observer: Reacts to state changes with safe microphone transitions
     useEffect(() => {
-        if (assistantState === 'idle' && audioUnlocked) {
-            console.log("Assistant is idle. Re-activating unified listener...");
-            try {
-                // We use a small delay to ensure any previous processes have fully released the mic
-                setTimeout(() => {
-                    if (assistantStateRef.current === 'idle') {
-                        recognitionRef.current?.start();
-                    }
-                }, 500);
-            } catch (e) {
-                // Already started or busy, ignore
-            }
+        if (!audioUnlocked) return;
+
+        const currentState = assistantState;
+        console.log("State Machine transition to:", currentState);
+
+        if (currentState === 'idle') {
+            // Ensure mic starts for wake-word
+            setTimeout(safeStart, 500);
+        } else if (currentState === 'listening') {
+            // If already listening (from handleMicClick), this will be a no-op due to isStartedRef
+            safeStart();
+        } else if (currentState === 'thinking' || currentState === 'speaking') {
+            // Kill mic to avoid feedback and resource conflicts
+            safeStop();
         }
     }, [assistantState, audioUnlocked]);
 
@@ -562,12 +579,12 @@ const VoiceAssistant = () => {
 
     const handleMicClick = () => {
         if (assistantState === 'listening') {
-            recognitionRef.current?.stop();
+            safeStop();
         } else {
             setAssistantState('listening');
             synthRef.current.cancel();
             if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-            recognitionRef.current?.start();
+            safeStart();
         }
     };
 
