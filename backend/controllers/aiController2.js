@@ -287,17 +287,19 @@ exports.generateAudio = async (req, res) => {
                 }
 
                 const pcmBuffers = [];
-                const sampleRate = 16000;
+                const sampleRate = 22050; // High-quality requested rate
 
                 for (const chunk of textChunks) {
                     console.log(`[TTS] Requesting Sarvam PCM chunk (${chunk.length} chars)`);
                     const sarvamResponse = await axios.post('https://api.sarvam.ai/text-to-speech', {
                         inputs: [chunk],
                         target_language_code: effectiveLang === 'en-IN' ? 'en-IN' : (effectiveLang === 'hi-IN' ? 'hi-IN' : 'te-IN'),
-                        speaker: 'ritu',
+                        speaker: 'sunny', 
                         model: 'bulbul:v3',
-                        audio_format: 'linear16', // Raw PCM for perfect concatenation
-                        sample_rate: sampleRate
+                        audio_format: 'linear16',
+                        sample_rate: sampleRate,
+                        pace: 1.1,
+                        enable_preprocessing: true
                     }, {
                         headers: { 'api-subscription-key': process.env.SARVAM_API_KEY }
                     });
