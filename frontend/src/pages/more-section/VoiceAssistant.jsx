@@ -381,10 +381,19 @@ const VoiceAssistant = () => {
     const userTextPreviewRef = useRef('');
 
     const handleSendMessage = async (userText) => {
-        let currentChatId = activeChatId;
-        userTextPreviewRef.current = userText.length > 30 ? userText.substring(0, 30) + '...' : userText;
+        // Strip out any accidental wake word triggers from the actual command
+        const cleanUserText = userText.replace(/^(hey\s+kisan|kisan)\b[,.\s]*/i, '').trim();
+        
+        if (!cleanUserText) {
+            console.log("Empty message after wake word stripping. Returning to idle.");
+            setAssistantState('idle');
+            return;
+        }
 
-        // Create a brand new chat if none exists (Temporary ID before Mongo Sync generates real one)
+        let currentChatId = activeChatId;
+        userTextPreviewRef.current = cleanUserText.length > 30 ? cleanUserText.substring(0, 30) + '...' : cleanUserText;
+
+        // Create a brand new chat if none exists
         if (!currentChatId || chats.length === 0) {
             const newId = Date.now().toString();
             currentChatId = newId;
@@ -394,17 +403,16 @@ const VoiceAssistant = () => {
         }
 
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const userMessageObj = { role: 'user', content: userText, timestamp };
+        const userMessageObj = { role: 'user', content: cleanUserText, timestamp };
 
         // Update Messages State locally first
         let updatedChatsPostUser = [];
         setChats(prevChats => {
             const newChatsState = prevChats.map(chat => {
                 if (chat.id === currentChatId) {
-                    // Generate Title if it's the very first message
                     let newTitle = chat.title;
                     if (!newTitle) {
-                        newTitle = userText.length > 30 ? userText.substring(0, 30) + '...' : userText;
+                        newTitle = cleanUserText.length > 30 ? cleanUserText.substring(0, 30) + '...' : cleanUserText;
                     }
                     return { ...chat, title: newTitle, messages: [...chat.messages, userMessageObj] };
                 }
@@ -424,8 +432,6 @@ const VoiceAssistant = () => {
             if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
 
             const langMap = { 'en-IN': 'English', 'te-IN': 'Telugu', 'hi-IN': 'Hindi' };
-
-            // Resolve the correct ID for history context
             const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
             const isMongoId = syncId.length === 24;
 
@@ -436,10 +442,10 @@ const VoiceAssistant = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: userText,
+                    message: cleanUserText,
                     language: langMap[language],
                     userId: TEMP_USER_ID,
-                    chatId: isMongoId ? syncId : null // Only pass if it's a real MongoDB ID
+                    chatId: isMongoId ? syncId : null
                 }),
                 signal: controller.signal
             });
@@ -452,41 +458,19 @@ const VoiceAssistant = () => {
             }
 
             const data = await response.json();
-
             const aiResponseText = data.response || data.reply || "I am currently unable to process your request. Please try again.";
             const aiTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const aiMessageObj = { role: 'ai', content: aiResponseText, timestamp: aiTimestamp };
 
-            // Append AI message to the chat
-            let updatedChatsPostAI = [];
-            setChats(prevChats => {
-                // Resolve the target ID in case it was mutated to a Mongo ID by a background sync
-                const targetChatId = chatIdMapRef.current[currentChatId] || currentChatId;
-
-                const newState = prevChats.map(chat => {
-                    if (chat.id === targetChatId) {
-                        return { ...chat, messages: [...chat.messages, aiMessageObj] };
-                    }
-                    return chat;
-                });
-                updatedChatsPostAI = newState;
-                return newState;
-            });
-
-            // Sync AI response to MongoDB using the correct dynamically resolved ID
-            const finalSyncId = chatIdMapRef.current[currentChatId] || currentChatId;
-            setTimeout(() => syncChatToMongo(finalSyncId, updatedChatsPostAI), 100);
-
-            setAssistantState('speaking');
-            // Simplified call to stop any overlapping listening if necessary
-            try { recognitionRef.current?.stop(); } catch (e) { }
-
-            speakText(aiResponseText, language);
+            // INSTEAD of appending immediately, we pass it to speakText which will 
+            // append it once the audio is actually ready, mimicking Gemini's behavior.
+            const targetChatId = chatIdMapRef.current[currentChatId] || currentChatId;
+            speakText(aiResponseText, language, aiMessageObj, targetChatId);
 
         } catch (error) {
             console.error("AI Fetch Error:", error);
             const fallbackText = language.includes('te')
-                ? "క్షమించండి, నా సిస్టమ్‌లో నెట్‌వర్క్ సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నించండి."
+                ? "క్షమించండి, నా సిస్టమ్‌లో నెట్‌వర్క్ సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నిచండి."
                 : language.includes('hi')
                     ? "क्षमा करें, मेरे नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।"
                     : "I am having trouble connecting to the knowledge base right now. Please try again.";
@@ -496,7 +480,7 @@ const VoiceAssistant = () => {
         }
     };
 
-    const speakText = async (text, lang) => {
+    const speakText = async (text, lang, messageToAppend = null, chatId = null) => {
         // Script Detection to ensure correct voice even if UI is in a different language
         const detectLang = (input) => {
             if (/[\u0C00-\u0C7F]/.test(input)) return 'te-IN';
@@ -505,6 +489,27 @@ const VoiceAssistant = () => {
         };
 
         const effectiveLang = detectLang(text) || lang;
+
+        // Internal helper to append message to state ONLY when audio begins
+        const appendMessageToChat = () => {
+             if (messageToAppend && chatId) {
+                 setChats(prevChats => {
+                     const newState = prevChats.map(chat => {
+                         if (chat.id === chatId) {
+                             // Avoid duplicate appends if audio is multi-triggered
+                             const exists = chat.messages.some(m => m.timestamp === messageToAppend.timestamp && m.content === messageToAppend.content);
+                             if (exists) return chat;
+                             return { ...chat, messages: [...chat.messages, messageToAppend] };
+                         }
+                         return chat;
+                     });
+                     
+                     // Sync the update to Mongo once the AI message is officially added
+                     setTimeout(() => syncChatToMongo(chatId, newState), 100);
+                     return newState;
+                 });
+             }
+        };
 
         try {
             const response = await fetch(`${process.env.REACT_APP_API_URL}/api/speak`, {
@@ -523,7 +528,12 @@ const VoiceAssistant = () => {
             const audio = new Audio(audioUrl);
             audioRef.current = audio;
 
-            // Play the high quality audio
+            // When audio is ready to play, then we show the message and switch state
+            audio.onplay = () => {
+                setAssistantState('speaking');
+                appendMessageToChat();
+            };
+
             audio.onended = () => {
                 setAssistantState('idle');
                 URL.revokeObjectURL(audioUrl);
@@ -531,9 +541,11 @@ const VoiceAssistant = () => {
             audio.onerror = () => {
                 setAssistantState('idle');
             };
+            
             // We must catch the play promise strictly
             audio.play().catch(err => {
                 console.log("Audio play blocked by browser:", err);
+                appendMessageToChat(); // Fallback: show message even if audio fails to play
                 setAssistantState('idle');
             });
 
@@ -549,7 +561,7 @@ const VoiceAssistant = () => {
                 if (voices.length === 0) {
                     console.warn("No TTS voices found, waiting for voiceschanged event...");
                     window.speechSynthesis.onvoiceschanged = () => {
-                        speakText(text, effectiveLang); // Retry once voices load
+                        speakText(text, effectiveLang, messageToAppend, chatId); // Retry once voices load
                     };
                     return;
                 }
@@ -561,17 +573,24 @@ const VoiceAssistant = () => {
 
                 if (matchedVoice) utterance.voice = matchedVoice;
 
+                utterance.onstart = () => {
+                    setAssistantState('speaking');
+                    appendMessageToChat();
+                };
+
                 utterance.onend = () => {
                     setAssistantState('idle');
                 };
                 utterance.onerror = (e) => {
                     console.log("SpeechSynthesis error:", e);
+                    appendMessageToChat(); // Fallback
                     setAssistantState('idle');
                 };
 
                 synthRef.current.speak(utterance);
             } catch (fallbackErr) {
                 console.log("Native TTS fallback also failed:", fallbackErr);
+                appendMessageToChat();
                 setAssistantState('idle');
             }
         }
@@ -593,7 +612,11 @@ const VoiceAssistant = () => {
     // Combine historical messages with the live voice transcript bubble (if active)
     const displayMessages = currentChat ? [...currentChat.messages] : [];
     if (transcript) {
-        displayMessages.push({ role: 'user', content: transcript, timestamp: 'Listening...' });
+        // Strip wake word from live transcript bubble too
+        const cleanTranscript = transcript.replace(/^(hey\s+kisan|kisan)\b[,.\s]*/i, '').trim();
+        if (cleanTranscript) {
+            displayMessages.push({ role: 'user', content: cleanTranscript, timestamp: 'Listening...' });
+        }
     }
 
     return (
