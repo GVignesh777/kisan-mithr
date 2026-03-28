@@ -118,7 +118,7 @@ const VoiceAssistant = () => {
 
         // Initialize ONE persistent instance
         const recognition = new SpeechRecognition();
-        recognition.continuous = true;
+        recognition.continuous = !isMobile; // Mobile browsers (Safari) are more stable in non-continuous mode
         recognition.interimResults = true;
         recognition.lang = language;
         recognitionRef.current = recognition;
@@ -157,8 +157,9 @@ const VoiceAssistant = () => {
                     else interimTrans += results[i][0].transcript;
                 }
                 setTranscript(finalTrans || interimTrans);
-                // 2.5s Silence Auto-Stop
-                silenceTimeoutRef.current = setTimeout(stopAndProcess, 2500);
+                // 2s Silence on Mobile, 2.5s on Desktop
+                const timeoutDelay = isMobile ? 2000 : 2500;
+                silenceTimeoutRef.current = setTimeout(stopAndProcess, timeoutDelay);
             }
         };
 
@@ -166,8 +167,8 @@ const VoiceAssistant = () => {
             console.log("Recognition STARTED. State:", assistantStateRef.current);
             isStartedRef.current = true;
 
-            // MediaRecorder (Whisper) ONLY on Desktop to avoid mobile conflicts
-            if (assistantStateRef.current === 'listening' && !isMobile) {
+            // MediaRecorder (Whisper) for high accuracy, now enabled for both desktop and mobile
+            if (assistantStateRef.current === 'listening') {
                 audioChunksRef.current = [];
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -239,8 +240,9 @@ const VoiceAssistant = () => {
             // Ensure mic starts for wake-word
             setTimeout(safeStart, 500);
         } else if (currentState === 'listening') {
-            // If already listening (from handleMicClick), this will be a no-op due to isStartedRef
-            safeStart();
+            // Safety delay on mobile to let other audio resources release
+            const startDelay = isMobile ? 300 : 0;
+            setTimeout(safeStart, startDelay);
         } else if (currentState === 'thinking' || currentState === 'speaking') {
             // Kill mic to avoid feedback and resource conflicts
             safeStop();
