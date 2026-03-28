@@ -41,6 +41,11 @@ const VoiceAssistant = () => {
   const isStartedRef = useRef(false);
   const assistantStateRef = useRef(assistantState);
 
+  // Audio Queue Management
+  const audioQueueRef = useRef([]);
+  const isPlayingQueueRef = useRef(false);
+  const audioCacheRef = useRef(new Map()); // text -> Blob URL
+
   // Dynamic Microphone Format Detection for Cross-Platform Stability
   const getSupportedMimeType = () => {
     if (typeof MediaRecorder === 'undefined') return 'audio/webm';
@@ -304,9 +309,7 @@ const VoiceAssistant = () => {
      setActiveChatId(newChat.id);
      
      // Stop any active speech processing
-     synthRef.current.cancel();
-     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-     setAssistantState('idle');
+     handleStopSpeaking();
   };
 
   const handleEditChat = async (id, newTitle) => {
@@ -411,45 +414,84 @@ const VoiceAssistant = () => {
       setAssistantState('thinking');
       
       try {
-          synthRef.current.cancel();
-          if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-
           const langMap = { 'en-IN': 'English', 'te-IN': 'Telugu', 'hi-IN': 'Hindi' };
+          const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
+          
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ask-ai`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userMessage: userText, language: langMap[language], userId: userId })
+              body: JSON.stringify({ 
+                  message: userText, 
+                  language: langMap[language], 
+                  userId: userId, 
+                  chatId: syncId.length === 24 ? syncId : null 
+              })
           });
 
           if (!response.ok) throw new Error("Failed to connect");
-          const data = await response.json();
           
-          const aiResponseText = data.response;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let fullAiText = '';
+          let sentenceBuffer = '';
           const aiTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const aiMessageObj = { role: 'ai', content: aiResponseText, timestamp: aiTimestamp };
+          const aiMessageObj = { role: 'ai', content: '', timestamp: aiTimestamp };
 
-          // Append AI message to the chat
-          let updatedChatsPostAI = [];
-          setChats(prevChats => {
-              // Resolve the target ID in case it was mutated to a Mongo ID by a background sync
-              const targetChatId = chatIdMapRef.current[currentChatId] || currentChatId;
-              
-              const newState = prevChats.map(chat => {
-                  if (chat.id === targetChatId) {
-                     return { ...chat, messages: [...chat.messages, aiMessageObj] };
-                  }
-                  return chat;
+          // Reset Audio Queue
+          audioQueueRef.current = [];
+          isPlayingQueueRef.current = false;
+
+          while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              fullAiText += chunk;
+              sentenceBuffer += chunk;
+
+              // Real-time Text UI Sync
+              setChats(prev => {
+                  const targetId = chatIdMapRef.current[currentChatId] || currentChatId;
+                  return prev.map(chat => {
+                      if (chat.id === targetId) {
+                          const msgIndex = chat.messages.findIndex(m => m.timestamp === aiTimestamp && m.role === 'ai');
+                          if (msgIndex === -1) return { ...chat, messages: [...chat.messages, { ...aiMessageObj, content: fullAiText }] };
+                          const newMessages = [...chat.messages];
+                          newMessages[msgIndex] = { ...newMessages[msgIndex], content: fullAiText };
+                          return { ...chat, messages: newMessages };
+                      }
+                      return chat;
+                  });
               });
-              updatedChatsPostAI = newState;
-              return newState;
+
+              // Sentence-based Triggering
+              const sentenceEndRegex = /[.!?](\s+|$)/;
+              if (sentenceEndRegex.test(sentenceBuffer)) {
+                  const parts = sentenceBuffer.split(/([.!?](\s+|$))/);
+                  let completeSentences = "";
+                  let lastIndex = 0;
+                  for(let i=1; i<parts.length; i+=2) {
+                       completeSentences += parts[i-1] + parts[i];
+                       lastIndex = i + 1;
+                  }
+                  const remaining = parts.slice(lastIndex).join('');
+                  if (completeSentences.trim()) {
+                      speakText(completeSentences.trim(), language, aiMessageObj, currentChatId);
+                  }
+                  sentenceBuffer = remaining;
+              }
+          }
+
+          if (sentenceBuffer.trim()) {
+              speakText(sentenceBuffer.trim(), language, aiMessageObj, currentChatId);
+          }
+
+          // Final MongoDB Sync
+          const finalSyncId = chatIdMapRef.current[currentChatId] || currentChatId;
+          setChats(prev => {
+              setTimeout(() => syncChatToMongo(finalSyncId, prev), 200);
+              return prev;
           });
-
-          // Sync AI response to MongoDB using the correct dynamically resolved ID
-          const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
-          setTimeout(() => syncChatToMongo(syncId, updatedChatsPostAI), 100);
-
-          setAssistantState('speaking');
-          speakText(aiResponseText, language);
 
       } catch (error) {
           console.error("AI Fetch Error:", error);
@@ -457,65 +499,121 @@ const VoiceAssistant = () => {
       }
   };
 
-  const speakText = async (text, lang) => {
+  const speakText = async (text, lang, messageToAppend = null, chatId = null) => {
+      const detectLang = (input) => {
+          if (/[\u0C00-\u0C7F]/.test(input)) return 'te-IN';
+          if (/[\u0900-\u097F]/.test(input)) return 'hi-IN';
+          return null;
+      };
+
+      const effectiveLang = detectLang(text) || lang;
+
+      const appendMessageToChat = () => {
+          if (messageToAppend && chatId) {
+              setChats(prevChats => {
+                  const chatIndex = prevChats.findIndex(c => c.id === chatId);
+                  if (chatIndex === -1) return prevChats;
+                  const chat = prevChats[chatIndex];
+                  const msgKey = messageToAppend.timestamp + messageToAppend.content;
+                  if (chat.messages.some(m => (m.timestamp + m.content) === msgKey)) return prevChats;
+
+                  const newChats = [...prevChats];
+                  newChats[chatIndex] = { ...chat, messages: [...chat.messages, messageToAppend] };
+                  setTimeout(() => syncChatToMongo(chatId, newChats), 100);
+                  return newChats;
+              });
+          }
+      };
+
+      const playNextInQueue = () => {
+          if (audioQueueRef.current.length === 0) {
+              isPlayingQueueRef.current = false;
+              setAssistantState('idle');
+              return;
+          }
+
+          isPlayingQueueRef.current = true;
+          const { audio, text: segmentText, isFirst } = audioQueueRef.current.shift();
+
+          audio.onplay = () => {
+              setAssistantState('speaking');
+              if (isFirst) appendMessageToChat();
+          };
+
+          audio.onended = () => {
+              playNextInQueue();
+          };
+
+          audio.onerror = () => {
+              playNextInQueue();
+          };
+
+          audio.play().catch(err => {
+              playNextInQueue();
+          });
+      };
+
+      const addToQueue = (audioBlob, segmentText, isFirst) => {
+          const url = URL.createObjectURL(audioBlob);
+          const audio = new Audio(url);
+          audioQueueRef.current.push({ audio, text: segmentText, isFirst });
+          if (!isPlayingQueueRef.current) {
+              playNextInQueue();
+          }
+      };
+
+      if (audioCacheRef.current.has(text)) {
+          const blob = audioCacheRef.current.get(text);
+          addToQueue(blob, text, messageToAppend !== null);
+          return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+
       try {
           const response = await fetch(`${process.env.REACT_APP_API_URL}/api/speak`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: text, language: lang })
+              body: JSON.stringify({
+                  text: text,
+                  language: effectiveLang,
+                  voice: 'sunny'
+              }),
+              signal: controller.signal
           });
 
-          if (!response.ok) throw new Error("ElevenLabs 402/500");
+          clearTimeout(timeoutId);
+
+          if (!response.ok) throw new Error("Sarvam Error");
           const blob = await response.blob();
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          audioRef.current = audio;
+          audioCacheRef.current.set(text, blob);
+          addToQueue(blob, text, messageToAppend !== null);
 
-          // Play the high quality audio
-          audio.onended = () => { setAssistantState('idle'); URL.revokeObjectURL(audioUrl); };
-          audio.onerror = () => { setAssistantState('idle'); };
-          // We must catch the play promise strictly
-          audio.play().catch(err => {
-              console.log("Audio play blocked by browser:", err);
-              setAssistantState('idle'); // Allow them to retry
-          });
-          
-      } catch (error) {
-          console.log("ElevenLabs quota exceeded or failed. Falling back to native browser TTS.", error);
-          
-          try {
-              const utterance = new SpeechSynthesisUtterance(text);
-              utterance.lang = lang;
-              
-              const voices = window.speechSynthesis.getVoices();
-              
-              if (voices.length === 0) {
-                  console.warn("No TTS voices found, waiting for voiceschanged event...");
-                  window.speechSynthesis.onvoiceschanged = () => {
-                      speakText(text, lang); // Retry once voices load
-                  };
-                  return;
-              }
-
-              let matchedVoice = voices.find(v => v.lang.includes(lang) && v.name.includes('Google'));
-              if (!matchedVoice) matchedVoice = voices.find(v => v.lang === lang || v.lang.replace('_', '-') === lang);
-              if (!matchedVoice && lang === 'te-IN') matchedVoice = voices.find(v => v.lang.toLowerCase().includes('te') || v.name.toLowerCase().includes('telugu'));
-              else if (!matchedVoice && lang === 'hi-IN') matchedVoice = voices.find(v => v.lang.toLowerCase().includes('hi') || v.name.toLowerCase().includes('hindi'));
-
-              if (matchedVoice) utterance.voice = matchedVoice;
-
-              utterance.onend = () => setAssistantState('idle');
-              utterance.onerror = (e) => {
-                  console.log("SpeechSynthesis error:", e);
+      } catch (err) {
+          console.warn(`TTS Fallback for: "${text.substring(0, 20)}..."`);
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = effectiveLang;
+          utterance.rate = 1.0;
+          utterance.onstart = () => {
+              setAssistantState('speaking');
+              if (messageToAppend !== null) appendMessageToChat();
+          };
+          utterance.onend = () => {
+              if (!isPlayingQueueRef.current && audioQueueRef.current.length === 0) {
                   setAssistantState('idle');
-              };
-              
-              synthRef.current.speak(utterance);
-          } catch(fallbackErr) {
-              console.log("Native TTS fallback also failed:", fallbackErr);
-              setAssistantState('idle');
-          }
+              }
+          };
+          window.speechSynthesis.speak(utterance);
       }
+  };
+
+  const handleStopSpeaking = () => {
+      synthRef.current.cancel();
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      audioQueueRef.current = [];
+      isPlayingQueueRef.current = false;
+      setAssistantState('idle');
   };
 
   const handleMicClick = () => {
@@ -523,9 +621,8 @@ const VoiceAssistant = () => {
         recognitionRef.current?.stop();
         setAssistantState('idle');
     } else {
+        handleStopSpeaking();
         setAssistantState('listening');
-        synthRef.current.cancel();
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
         recognitionRef.current?.start();
     }
   };

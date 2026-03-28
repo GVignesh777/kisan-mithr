@@ -157,15 +157,27 @@ Your goal is to act as a secure, personalized, agriculture-only voice assistant.
             ],
             model: 'llama-3.1-8b-instant',
             temperature: 0.65,
+            stream: true,
             max_tokens: 600,
         });
 
-        const responseText = chatCompletion.choices[0]?.message?.content || "I am currently unable to process your request. Please try again.";
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Transfer-Encoding', 'chunked');
 
-        res.json({ response: responseText });
+        for await (const chunk of chatCompletion) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            if (content) {
+                res.write(content);
+            }
+        }
+        res.end();
     } catch (error) {
         console.error('Groq AI Error:', error);
-        res.status(500).json({ error: 'Failed to generate AI response' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to generate AI response' });
+        } else {
+            res.end();
+        }
     }
 };
 
