@@ -330,9 +330,18 @@ const VoiceAssistant = () => {
                         if (!res.ok) throw new Error("Whisper Fetch Failed");
                         
                         const data = await res.json();
-                        if (data.text && data.text.trim().length > 1) {
-                            console.log("Whisper Transcript:", data.text);
-                            handleSendMessage(data.text);
+                        const whisperText = data.text?.trim() || "";
+                        const nativeText = transcript.trim();
+
+                        // HEURISTIC: If Whisper returns very short text (possible hallucination) 
+                        // and Native STT has significantly more content, trust Native STT for local languages.
+                        const useWhisper = whisperText.length > 5 || nativeText.length < 3 || whisperText.split(' ').length > nativeText.split(' ').length;
+                        
+                        const finalText = useWhisper ? whisperText : nativeText;
+
+                        if (finalText.length > 1) {
+                            console.log(useWhisper ? "Using Whisper Transcript:" : "Using Native Fallback (Whisper too short):", finalText);
+                            handleSendMessage(finalText);
                             setTranscript('');
                             return;
                         }
@@ -429,40 +438,40 @@ const VoiceAssistant = () => {
     const userTextPreviewRef = useRef('');
 
     const appendMessageToChat = (chatId, messageObj) => {
-        if (messageObj && chatId) {
-            setChats(prevChats => {
-                const chatIndex = prevChats.findIndex(c => c.id === chatId);
-                if (chatIndex === -1) return prevChats;
-                const chat = prevChats[chatIndex];
-                const msgKey = messageObj.timestamp + messageObj.content;
-                if (chat.messages.some(m => (m.timestamp + m.content) === msgKey)) return prevChats;
+        setChats(prevChats => {
+            const chatIdx = prevChats.findIndex(c => c.id === chatId);
+            if (chatIdx === -1) return prevChats;
+            
+            const chat = prevChats[chatIdx];
+            // Check existence by timestamp and role only (content is dynamic)
+            const exists = chat.messages.some(m => m.timestamp === messageObj.timestamp && m.role === messageObj.role);
+            if (exists) return prevChats;
 
-                const newChats = [...prevChats];
-                newChats[chatIndex] = { ...chat, messages: [...chat.messages, messageObj] };
-                setTimeout(() => syncChatToMongo(chatId, newChats), 100);
-                return newChats;
-            });
-        }
+            const newChats = [...prevChats];
+            newChats[chatIdx] = { ...chat, messages: [...chat.messages, messageObj] };
+            return newChats;
+        });
     };
 
     const updateMessageInChat = (chatId, messageObj, updatedText) => {
-        if (messageObj && chatId) {
-            setChats(prevChats => {
-                const chatIndex = prevChats.findIndex(c => c.id === chatId);
-                if (chatIndex === -1) return prevChats;
-                const chat = prevChats[chatIndex];
-                const msgIndex = chat.messages.findIndex(m => m.timestamp === messageObj.timestamp && m.role === 'ai');
-                if (msgIndex === -1) {
-                    messageObj.content = updatedText;
-                    return prevChats.map(c => c.id === chatId ? { ...c, messages: [...c.messages, messageObj] } : c);
-                }
-                const newMessages = [...chat.messages];
-                newMessages[msgIndex] = { ...newMessages[msgIndex], content: updatedText };
-                const newChats = [...prevChats];
-                newChats[chatIndex] = { ...chat, messages: newMessages };
-                return newChats;
-            });
-        }
+        if (!messageObj || !chatId) return;
+        
+        setChats(prevChats => {
+            const chatIdx = prevChats.findIndex(c => c.id === chatId);
+            if (chatIdx === -1) return prevChats;
+
+            const chat = prevChats[chatIdx];
+            const msgIndex = chat.messages.findIndex(m => m.timestamp === messageObj.timestamp && m.role === messageObj.role);
+            
+            if (msgIndex === -1) return prevChats;
+
+            const updatedMessages = [...chat.messages];
+            updatedMessages[msgIndex] = { ...updatedMessages[msgIndex], content: updatedText };
+            
+            const newChats = [...prevChats];
+            newChats[chatIdx] = { ...chat, messages: updatedMessages };
+            return newChats;
+        });
     };
 
     const handleSendMessage = async (userText) => {
@@ -533,13 +542,21 @@ const VoiceAssistant = () => {
             const decoder = new TextDecoder();
             let fullAiText = '';
             let sentenceBuffer = '';
-            let isFirstSegment = true;
             const aiTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const aiMessageObj = { role: 'ai', content: '', timestamp: aiTimestamp };
 
             // Reset Audio Queue for new interaction
             audioQueueRef.current = [];
             isPlayingQueueRef.current = false;
+
+            // PRE-APPEND Empty AI Message so it appears immediately in UI
+            setChats(prevChats => {
+                const chat = prevChats.find(c => c.id === currentChatId);
+                if (!chat) return prevChats;
+                // Avoid double append if already exists
+                if (chat.messages.some(m => m.timestamp === aiTimestamp && m.role === 'ai')) return prevChats;
+                return prevChats.map(c => c.id === currentChatId ? { ...c, messages: [...c.messages, aiMessageObj] } : c);
+            });
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -548,8 +565,8 @@ const VoiceAssistant = () => {
                 const chunk = decoder.decode(value, { stream: true });
                 fullAiText += chunk;
                 sentenceBuffer += chunk;
-
-                // Update the chat message content in real-time (Gemini style)
+                
+                // Update the pre-appended message in real-time
                 updateMessageInChat(currentChatId, aiMessageObj, fullAiText);
 
                 // Detect sentence boundaries to trigger TTS early
