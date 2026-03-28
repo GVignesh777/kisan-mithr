@@ -90,16 +90,6 @@ const VoiceAssistant = () => {
     // Simple Mobile Detection to resolve mic occupancy conflicts
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    const handleStopSpeaking = () => {
-        console.log("Stopping assistant speech...");
-        synthRef.current.cancel();
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-        }
-        setAssistantState('idle');
-    };
-
     // Load from MongoDB initially
     useEffect(() => {
         if (!userId) return;
@@ -412,6 +402,43 @@ const VoiceAssistant = () => {
     // Ref strictly for title preview usage to avoid stale state in closure
     const userTextPreviewRef = useRef('');
 
+    const appendMessageToChat = (chatId, messageObj) => {
+        if (messageObj && chatId) {
+            setChats(prevChats => {
+                const chatIndex = prevChats.findIndex(c => c.id === chatId);
+                if (chatIndex === -1) return prevChats;
+                const chat = prevChats[chatIndex];
+                const msgKey = messageObj.timestamp + messageObj.content;
+                if (chat.messages.some(m => (m.timestamp + m.content) === msgKey)) return prevChats;
+
+                const newChats = [...prevChats];
+                newChats[chatIndex] = { ...chat, messages: [...chat.messages, messageObj] };
+                setTimeout(() => syncChatToMongo(chatId, newChats), 100);
+                return newChats;
+            });
+        }
+    };
+
+    const updateMessageInChat = (chatId, messageObj, updatedText) => {
+        if (messageObj && chatId) {
+            setChats(prevChats => {
+                const chatIndex = prevChats.findIndex(c => c.id === chatId);
+                if (chatIndex === -1) return prevChats;
+                const chat = prevChats[chatIndex];
+                const msgIndex = chat.messages.findIndex(m => m.timestamp === messageObj.timestamp && m.role === 'ai');
+                if (msgIndex === -1) {
+                    messageObj.content = updatedText;
+                    return prevChats.map(c => c.id === chatId ? { ...c, messages: [...c.messages, messageObj] } : c);
+                }
+                const newMessages = [...chat.messages];
+                newMessages[msgIndex] = { ...newMessages[msgIndex], content: updatedText };
+                const newChats = [...prevChats];
+                newChats[chatIndex] = { ...chat, messages: newMessages };
+                return newChats;
+            });
+        }
+    };
+
     const handleSendMessage = async (userText) => {
         // Strip out any accidental wake word triggers from the actual command
         const cleanUserText = userText.replace(/^(hey\s+kisan|kisan)\b[,.\s]*/i, '').trim();
@@ -497,7 +524,7 @@ const VoiceAssistant = () => {
                 sentenceBuffer += chunk;
 
                 // Update the chat message content in real-time (Gemini style)
-                updateMessageInChat(fullAiText);
+                updateMessageInChat(currentChatId, aiMessageObj, fullAiText);
 
                 // Detect sentence boundaries to trigger TTS early
                 const sentenceEndRegex = /[.!?](\s+|$)/;
@@ -534,7 +561,7 @@ const VoiceAssistant = () => {
             const fallbackText = language.includes('te')
                 ? "క్షమించండి, నా సిస్టమ్‌లో నెట్‌వర్క్ సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నిచండి."
                 : language.includes('hi')
-                    ? "क्षमा करें, मेरे नेटवर्क में समस्या है। कृपया पुनः प्रयास करें।"
+                    ? "क्षमा करें, मेरे नेटवर्क में समस्या है। कृपया पुनः प्रयास करें。"
                     : "I am having trouble connecting to the knowledge base right now. Please try again.";
 
             speakText(fallbackText, language);
@@ -551,42 +578,7 @@ const VoiceAssistant = () => {
 
         const effectiveLang = detectLang(text) || lang;
 
-        const appendMessageToChat = () => {
-            if (messageToAppend && chatId) {
-                setChats(prevChats => {
-                    const chatIndex = prevChats.findIndex(c => c.id === chatId);
-                    if (chatIndex === -1) return prevChats;
-                    const chat = prevChats[chatIndex];
-                    const msgKey = messageToAppend.timestamp + messageToAppend.content;
-                    if (chat.messages.some(m => (m.timestamp + m.content) === msgKey)) return prevChats;
 
-                    const newChats = [...prevChats];
-                    newChats[chatIndex] = { ...chat, messages: [...chat.messages, messageToAppend] };
-                    setTimeout(() => syncChatToMongo(chatId, newChats), 100);
-                    return newChats;
-                });
-            }
-        };
-
-        const updateMessageInChat = (updatedText) => {
-            if (messageToAppend && chatId) {
-                setChats(prevChats => {
-                    const chatIndex = prevChats.findIndex(c => c.id === chatId);
-                    if (chatIndex === -1) return prevChats;
-                    const chat = prevChats[chatIndex];
-                    const msgIndex = chat.messages.findIndex(m => m.timestamp === messageToAppend.timestamp && m.role === 'ai');
-                    if (msgIndex === -1) {
-                        messageToAppend.content = updatedText;
-                        return prevChats.map(c => c.id === chatId ? { ...c, messages: [...c.messages, messageToAppend] } : c);
-                    }
-                    const newMessages = [...chat.messages];
-                    newMessages[msgIndex] = { ...newMessages[msgIndex], content: updatedText };
-                    const newChats = [...prevChats];
-                    newChats[chatIndex] = { ...chat, messages: newMessages };
-                    return newChats;
-                });
-            }
-        };
 
         const playNextInQueue = () => {
             if (audioQueueRef.current.length === 0) {
@@ -600,7 +592,7 @@ const VoiceAssistant = () => {
 
             audio.onplay = () => {
                 setAssistantState('speaking');
-                if (isFirst) appendMessageToChat();
+                if (isFirst) appendMessageToChat(chatId, messageToAppend);
             };
 
             audio.onended = () => {
@@ -662,7 +654,7 @@ const VoiceAssistant = () => {
             utterance.rate = 1.0;
             utterance.onstart = () => {
                 setAssistantState('speaking');
-                if (messageToAppend !== null) appendMessageToChat();
+                if (messageToAppend !== null) appendMessageToChat(chatId, messageToAppend);
             };
             utterance.onend = () => {
                 if (!isPlayingQueueRef.current && audioQueueRef.current.length === 0) {
