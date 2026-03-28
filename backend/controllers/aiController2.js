@@ -414,23 +414,21 @@ exports.transcribeAudio = async (req, res) => {
         if (process.env.SARVAM_API_KEY) {
             try {
                 const formData = new FormData();
-                // Use fs.createReadStream for the file
-                const fileStream = fs.createReadStream(req.file.path);
-                formData.append('file', fileStream, { filename: req.file.originalname });
+                const fileBuffer = fs.readFileSync(req.file.path);
+                const fileBlob = new Blob([fileBuffer], { type: req.file.mimetype });
+                formData.append('file', fileBlob, req.file.originalname);
                 formData.append('language_code', langCode);
-                formData.append('model', 'saara:v1');
+                formData.append('model', 'saaras:v1');
 
-                console.log("Attempting Sarvam AI STT...");
+                console.log("Attempting Sarvam AI STT (Saaras v1)...");
                 const sarvamRes = await axios.post('https://api.sarvam.ai/speech-to-text', formData, {
                     headers: {
                         'api-subscription-key': process.env.SARVAM_API_KEY,
-                        // Axios will set the multipart boundary automatically for FormData
                     }
                 });
 
                 if (sarvamRes.data && sarvamRes.data.transcript) {
                     console.log("Sarvam STT Success:", sarvamRes.data.transcript);
-                    // Cleanup
                     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
                     return res.json({ text: sarvamRes.data.transcript });
                 }
