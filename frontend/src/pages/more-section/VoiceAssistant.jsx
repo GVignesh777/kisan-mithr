@@ -656,7 +656,8 @@ const VoiceAssistant = () => {
 
         } catch (err) {
             console.warn(`TTS Fallback for: "${text.substring(0, 20)}..." | Reason: ${err.name === 'AbortError' ? 'Timeout' : 'Error'}`);
-            const utterance = new SpeechSynthesisUtterance(text);
+            const cleanText = text.replace(/[#*`~_|>\[\]()\-]/g, "");
+            const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = effectiveLang;
             utterance.rate = 1.0;
             utterance.onstart = () => {
