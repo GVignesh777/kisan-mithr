@@ -18,6 +18,19 @@ const VoiceAssistant = () => {
 
     // Chat Data State
     const [chats, setChats] = useState([]);
+    // Dynamic Microphone Format Detection for Cross-Platform Stability
+    const getSupportedMimeType = () => {
+        if (typeof MediaRecorder === 'undefined') return 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+        return 'audio/wav';
+    };
+    const mimeTypeRef = useRef(getSupportedMimeType());
+    const audioExtRef = useRef(
+        mimeTypeRef.current.includes('mp4') ? 'mp4' : 
+        mimeTypeRef.current.includes('wav') ? 'wav' : 'webm'
+    );
+
     const [activeChatId, setActiveChatId] = useState(null);
 
     const recognitionRef = useRef(null);
@@ -230,7 +243,7 @@ const VoiceAssistant = () => {
                 audioChunksRef.current = [];
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
                     mediaRecorderRef.current.ondataavailable = (e) => {
                         if (e.data.size > 0) audioChunksRef.current.push(e.data);
                     };
@@ -283,9 +296,9 @@ const VoiceAssistant = () => {
             const processVoiceInput = async () => {
                 // If we have recorded chunks, send to Whisper for robust multi-mixed language support
                 if (audioChunksRef.current.length > 0) {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
                     const formData = new FormData();
-                    formData.append('audio', audioBlob, 'recording.webm');
+                    formData.append('audio', audioBlob, `recording.${audioExtRef.current}`);
 
                     try {
                         console.log("Sending audio to Whisper for multi-mixed transcript...");
