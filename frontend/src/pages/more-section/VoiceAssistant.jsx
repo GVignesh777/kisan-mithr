@@ -43,15 +43,16 @@ const VoiceAssistant = () => {
 
     // Safe Start/Stop helpers for SpeechRecognition
     const safeStart = () => {
-        if (recognitionRef.current && !isStartedRef.current && audioUnlockedRef.current) {
-            try {
-                recognitionRef.current.start();
-                // Note: isStartedRef will be set to true in onstart event for accuracy
-            } catch (e) {
-                console.error("SafeStart Trigger Error:", e);
-                // If it's already started, just sync our ref
-                if (e.message?.includes('already started')) isStartedRef.current = true;
-            }
+        if (!recognitionRef.current || isStartedRef.current || !audioUnlockedRef.current) return;
+        
+        // On mobile, only start native STT if we are IDLE (waiting for wake-word)
+        // If we are LISTENING, we use direct Mic capture (MediaRecorder) only
+        if (isMobile && assistantStateRef.current === 'listening') return;
+
+        try {
+            recognitionRef.current.start();
+        } catch (e) {
+            if (e.message?.includes('already started')) isStartedRef.current = true;
         }
     };
 
@@ -163,25 +164,9 @@ const VoiceAssistant = () => {
             }
         };
 
-        recognition.onstart = async () => {
-            console.log("Recognition STARTED. State:", assistantStateRef.current);
+        recognition.onstart = () => {
+            console.log("Native STT STARTED. State:", assistantStateRef.current);
             isStartedRef.current = true;
-
-            // MediaRecorder (Whisper) for high accuracy, now enabled for both desktop and mobile
-            if (assistantStateRef.current === 'listening') {
-                audioChunksRef.current = [];
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorderRef.current = new MediaRecorder(stream);
-                    mediaRecorderRef.current.ondataavailable = (e) => {
-                        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-                    };
-                    mediaRecorderRef.current.start();
-                    console.log("Desktop MediaRecorder active.");
-                } catch (err) {
-                    console.error("MediaRecorder start failed:", err);
-                }
-            }
         };
 
         recognition.onend = () => {
@@ -237,17 +222,39 @@ const VoiceAssistant = () => {
         console.log("State Machine transition to:", currentState);
 
         if (currentState === 'idle') {
-            // Ensure mic starts for wake-word
+            // Wake word listening (Native STT)
             setTimeout(safeStart, 500);
         } else if (currentState === 'listening') {
-            // Safety delay on mobile to let other audio resources release
-            const startDelay = isMobile ? 300 : 0;
-            setTimeout(safeStart, startDelay);
+            // Direct Mic Capture (Whisper Pipeline) - Standard for Mobile, Optional for Desktop
+            const startMicCapture = async () => {
+                audioChunksRef.current = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    mediaRecorderRef.current.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+                    };
+                    mediaRecorderRef.current.start();
+                    console.log("Direct Mic Capture (MediaRecorder) active.");
+                } catch (err) {
+                    console.error("Direct Mic Capture failed:", err);
+                }
+            };
+            
+            startMicCapture();
+
+            // Native STT for real-time feedback (Desktop ONLY)
+            if (!isMobile) {
+                setTimeout(safeStart, 100); 
+            }
         } else if (currentState === 'thinking' || currentState === 'speaking') {
-            // Kill mic to avoid feedback and resource conflicts
+            // Kill everything to reset hardware and avoid resonance
             safeStop();
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                try { mediaRecorderRef.current.stop(); } catch (e) {}
+            }
         }
-    }, [assistantState, audioUnlocked]);
+    }, [assistantState, audioUnlocked, isMobile]);
 
     // Browser Audio & TTS Unlock Mechanism
     // Browsers block autoplaying Audio and SpeechSynthesis until the user interacts with the document.
