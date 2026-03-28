@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useState } from 'react';
 import { Mic, MicOff, SendHorizontal, Keyboard, Square } from 'lucide-react';
 import WaveformVisualizer from './WaveformVisualizer';
-import { useEffect, useRef, useState } from 'react';
 
 const InputArea = ({ 
     onSendMessage, 
@@ -12,6 +12,7 @@ const InputArea = ({
 }) => {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
+  
   const isListening = assistantState === 'listening';
   const isSpeaking = assistantState === 'speaking';
   const isThinking = assistantState === 'thinking';
@@ -42,87 +43,96 @@ const InputArea = ({
 
   return (
     <div className="w-full relative z-20 mx-auto max-w-3xl">
+      
       {/* Waveform Visualizer for Audio Feedback */}
       {(isListening || isSpeaking) && (
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 pointer-events-none">
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 pointer-events-none z-50">
               <WaveformVisualizer state={assistantState} />
           </div>
       )}
 
       {/* Mode Toggles */}
-      <div className="flex justify-center mb-3 space-x-2">
+      <div className="flex justify-center mb-6 space-x-3">
         <button 
             onClick={() => setInputMode('text')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300
-                ${inputMode === 'text' ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-black/20 text-zinc-400 border border-transparent hover:text-zinc-200'}`}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-all duration-300 border
+                ${inputMode === 'text' 
+                    ? 'bg-green-500/20 text-green-400 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200'}`}
         >
             <Keyboard size={14} />
             <span>Type Mode</span>
         </button>
         <button 
             onClick={() => setInputMode('voice')}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300
-                ${inputMode === 'voice' ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50' : 'bg-black/20 text-zinc-400 border border-transparent hover:text-zinc-200'}`}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-all duration-300 border
+                ${inputMode === 'voice' 
+                    ? 'bg-sky-500/20 text-sky-400 border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' 
+                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200'}`}
         >
             <Mic size={14} />
             <span>Voice Mode</span>
         </button>
       </div>
 
-      {isSpeaking && (
-         <div className="flex justify-center mb-4 pb-2">
-             <button
+      {/* Large Center Control Area */}
+      <div className="flex justify-center mb-6">
+          {isSpeaking ? (
+              <button
                 onClick={handleStopSpeaking}
-                className="relative group flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse shadow-lg outline-none cursor-pointer"
-                title="Stop Speaking"
-             >
-                <Square className="w-6 h-6 fill-current" />
-             </button>
-         </div>
-      )}
-
-      {inputMode === 'voice' && !isSpeaking && (
-         <div className="flex justify-center mb-4 pb-2">
-             <button
+                className="relative group flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-pulse shadow-lg outline-none cursor-pointer"
+              >
+                <Square className="w-8 h-8 fill-current" />
+              </button>
+          ) : inputMode === 'voice' ? (
+              <button
                 onClick={handleMicClick}
                 disabled={isThinking}
-                className={`relative group flex items-center justify-center w-16 h-16 rounded-full transition-all duration-500 shadow-lg border outline-none
-                  ${isListening ? 'bg-sky-500 border-sky-400 scale-110 shadow-[0_0_30px_rgba(56,189,248,0.5)]' : 'bg-green-900/40 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.3)] border-white/10 hover:border-green-400/50 hover:bg-white/5'}
-                  ${isThinking ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                className={`relative group flex items-center justify-center w-20 h-20 rounded-full transition-all duration-700 shadow-2xl border-2 outline-none
+                  ${isListening 
+                    ? 'bg-sky-500 border-sky-400 scale-110 shadow-[0_0_50px_rgba(14,165,233,0.4)]' 
+                    : 'bg-green-900/20 backdrop-blur-xl border-white/20 hover:border-green-400/50 hover:bg-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
+                  }
+                  ${isThinking ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
                 `}
-             >
+              >
                 {isListening ? (
-                    <Mic className="text-white w-7 h-7 animate-pulse" />
+                    <Mic className="text-white w-9 h-9 animate-pulse" />
                 ) : (
-                    <Mic className="text-green-400 w-7 h-7 group-hover:scale-110 transition-transform" />
+                    <Mic className="text-green-400 w-9 h-9 group-hover:scale-110 transition-transform duration-500" />
                 )}
-             </button>
-         </div>
-      )}
+                
+                {/* Thinking Ripple */}
+                {isThinking && (
+                    <div className="absolute inset-0 rounded-full border-2 border-amber-500/50 animate-ping" />
+                )}
+              </button>
+          ) : null}
+      </div>
 
       {inputMode === 'text' && (
-         <div className="bg-green-900/40 backdrop-blur-md border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.3)] p-2 rounded-2xl flex items-end relative transition-all duration-300 focus-within:border-green-500/50 focus-within:shadow-[0_0_15px_rgba(74,222,128,0.15)]">
+         <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.3)] p-2 rounded-3xl flex items-end relative transition-all duration-500 focus-within:border-green-500/40 group">
             <textarea
                 ref={textareaRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask your farming question here..."
+                placeholder="Ask Kisan Mithr anything..."
                 disabled={isProcessing}
-                className="w-full bg-transparent text-white placeholder-zinc-500 p-3 outline-none resize-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-[44px] max-h-[120px] text-sm sm:text-base leading-relaxed"
+                className="w-full bg-transparent text-white placeholder-zinc-500 px-4 py-3.5 outline-none resize-none [&::-webkit-scrollbar]:hidden text-[15px] sm:text-base leading-relaxed overflow-hidden"
                 rows={1}
             />
             <button
                 onClick={submitMessage}
                 disabled={!text.trim() || isProcessing}
-                className={`mb-1 mr-1 p-2.5 rounded-xl flex items-center justify-center transition-all duration-300
+                className={`mb-1 mr-1 p-3 rounded-2xl flex items-center justify-center transition-all duration-300
                     ${text.trim() && !isProcessing
-                        ? 'bg-green-500 text-white hover:bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.4)] cursor-pointer' 
-                        : 'bg-white/5 text-zinc-500 cursor-not-allowed'
+                        ? 'bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] cursor-pointer active:scale-90' 
+                        : 'bg-white/5 text-zinc-600 cursor-not-allowed'
                     }
                 `}
             >
-                <SendHorizontal size={18} />
+                <SendHorizontal size={20} />
             </button>
          </div>
       )}
@@ -131,3 +141,4 @@ const InputArea = ({
 };
 
 export default InputArea;
+

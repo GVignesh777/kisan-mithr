@@ -1,83 +1,81 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { User, Sparkles } from 'lucide-react';
 
 const MessageBubble = ({ message, isTypingIndicator = false }) => {
   const isUser = message.role === 'user';
-
+  
   return (
-    <>
-    <style>{`
-      @keyframes bubble-fade-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-    `}</style>
-    <div 
-        className={`w-full flex ${isUser ? 'justify-end' : 'justify-start'}`}
-        style={{ animation: 'bubble-fade-in 0.3s ease-out forwards' }}
-    >
-      <div 
-        className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 shadow-md transition-all
+    <div className={`flex w-full mb-6 px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-2 duration-500 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex max-w-[85%] sm:max-w-[75%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        
+        {/* Avatar Section */}
+        <div className={`shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center border transition-all duration-500 shadow-lg
           ${isUser 
-            ? 'bg-green-600/20 border border-green-500/30 text-white rounded-tr-none' 
-            : 'bg-green-900/40 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.3)] text-zinc-100 rounded-tl-none border-l-4 border-green-400 border-y border-r border-green-400/10'
+            ? 'bg-green-500/20 border-green-500/30 text-green-400' 
+            : 'bg-zinc-800/50 border-white/10 text-green-500 shadow-green-500/10'
           }`}
-      >
-        {/* Name / Role Header */}
-        <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-semibold tracking-wider uppercase ${isUser ? 'text-green-300' : 'text-green-400'}`}>
-                {isUser ? 'You' : 'Kisan Mithr AI'}
-            </span>
-            {message.timestamp && (
-                <span className="text-[10px] text-zinc-400 ml-4">
-                    {(() => {
-                        const ts = message.timestamp;
-                        if (!ts) return '';
-                        // If it's already a short time string like "10:30 AM", return it
-                        if (typeof ts === 'string' && ts.length <= 10) return ts;
-                        // Otherwise it's likely an ISO string from MongoDB
-                        try {
-                            const d = new Date(ts);
-                            if (isNaN(d.getTime())) return ts; // fallback if invalid
-                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        } catch(e) { return ts; }
-                    })()}
-                </span>
-            )}
+        >
+          {isUser ? <User size={18} /> : <Sparkles size={18} className="animate-pulse" />}
         </div>
 
-        {/* Content */}
-        {isTypingIndicator ? (
-            <div className="flex space-x-1 items-center h-6">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
-            </div>
-        ) : (
-            <div className="text-[15px] sm:text-base leading-relaxed whitespace-pre-wrap ai-markdown-content break-words">
-                {isUser ? (
-                    <p>{message.content}</p>
-                ) : (
-                    <ReactMarkdown
-                        components={{
-                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-white mt-3 mb-1" {...props} />,
-                            h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-green-300 mt-3 mb-1" {...props} />,
-                            h3: ({node, ...props}) => <h3 className="text-lg font-medium text-green-200 mt-2 mb-1" {...props} />,
-                            p: ({node, ...props}) => <p className="mb-2" {...props} />,
-                            ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1 marker:text-green-400" {...props} />,
-                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1 marker:text-green-400" {...props} />,
-                            li: ({node, ...props}) => <li className="pl-1" {...props} />,
-                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
-                        }}
-                    >
-                        {message.content}
-                    </ReactMarkdown>
-                )}
-            </div>
-        )}
+        {/* Message Content */}
+        <div className="flex flex-col gap-1.5">
+          {/* Role Label */}
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-1 opacity-50
+            ${isUser ? 'text-zinc-500 text-right' : 'text-green-500'}
+          `}>
+            {isUser ? 'Farmer' : 'Kisan Mithr AI'}
+          </span>
+
+          {/* Bubble Card */}
+          <div className={`relative px-4 py-3 sm:px-5 sm:py-3.5 rounded-[24px] backdrop-blur-3xl border transition-all duration-500 shadow-xl
+            ${isUser 
+              ? 'bg-green-600/10 border-green-500/20 text-white rounded-tr-none' 
+              : 'bg-white/[0.03] border-white/10 text-zinc-100 rounded-tl-none'
+            }`}
+          >
+            {isTypingIndicator ? (
+                <div className="flex space-x-1.5 items-center h-6 px-1">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" />
+                </div>
+            ) : (
+                <div className="text-[15px] sm:text-base leading-relaxed font-medium tracking-wide whitespace-pre-wrap ai-markdown-content break-words">
+                    {isUser ? (
+                        <p>{message.content}</p>
+                    ) : (
+                        <ReactMarkdown
+                            components={{
+                                h1: ({node, ...props}) => <h1 className="text-xl sm:text-2xl font-black text-white mt-4 mb-2 border-l-2 border-green-500 pl-3 uppercase tracking-tighter" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="text-lg sm:text-xl font-bold text-green-400 mt-4 mb-2 uppercase tracking-wide" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="text-base sm:text-lg font-semibold text-green-300 mt-3 mb-1" {...props} />,
+                                p: ({node, ...props}) => <p className="mb-3 last:mb-0 opacity-90" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1.5 marker:text-green-400 opacity-90" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1.5 marker:text-green-400 opacity-90" {...props} />,
+                                li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-green-300" {...props} />,
+                                code: ({node, ...props}) => <code className="bg-green-950/50 text-green-300 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-green-500/30 bg-green-500/5 p-3 rounded-r-lg italic my-3" {...props} />
+                            }}
+                        >
+                            {message.content}
+                        </ReactMarkdown>
+                    )}
+                </div>
+            )}
+          </div>
+          
+          {/* Timestamp */}
+          <div className={`text-[9px] font-bold text-zinc-600 px-2 tracking-widest uppercase
+            ${isUser ? 'text-right' : 'text-left'}
+          `}>
+             {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
       </div>
     </div>
-    </>
   );
 };
 

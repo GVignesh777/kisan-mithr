@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import ChatWindow from '../../components/ChatWindow';
 import InputArea from './InputArea';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
-import { Menu } from 'lucide-react';
+import { Menu, Mic, Sparkles } from 'lucide-react';
 import useUserStore from '../../store/useUserStore';
 
 const VoiceAssistant = () => {
@@ -829,20 +829,28 @@ const VoiceAssistant = () => {
     }
 
     return (
-        <div className="flex h-[100dvh] w-full overflow-hidden text-zinc-100 font-sans antialiased bg-zinc-950 bg-[radial-gradient(circle_at_top_right,#0f361d,#091a0e_40%,#000000_100%)] bg-fixed">
+        <div className="flex h-[100dvh] w-full overflow-hidden text-zinc-100 font-sans antialiased bg-zinc-950 bg-[radial-gradient(circle_at_top_right,#0f361d,#091a0e_40%,#000000_100%)] bg-fixed relative">
+            
+            {/* Subtle Noise Overlay for Texture */}
+            <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-            {/* INITIALIZATION OVERLAY (Mandatory Click to Unlock Browser Autoplay) */}
+            {/* INITIALIZATION OVERLAY */}
             {!audioUnlocked && (
-                <div onClick={unlockAudioContext} className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 backdrop-blur-md cursor-pointer">
-                    <div className="bg-zinc-900 border border-green-500/50 p-8 rounded-2xl shadow-[0_0_50px_rgba(74,222,128,0.2)] text-center max-w-sm animate-pulse">
-                        <span className="text-6xl mb-6 block">🎙️</span>
-                        <h2 className="text-2xl font-bold text-white mb-2">Click to Start</h2>
-                        <p className="text-zinc-400">Click anywhere to enable Kisan Mithr AI's Voice Assistant.</p>
+                <div onClick={unlockAudioContext} className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/90 backdrop-blur-xl cursor-pointer">
+                    <div className="bg-green-900/20 border border-green-500/30 p-10 rounded-[32px] shadow-[0_0_100px_rgba(34,197,94,0.1)] text-center max-w-sm transition-all hover:scale-105 duration-700">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-green-500/30 animate-pulse">
+                            <Mic className="w-10 h-10 text-green-400" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white mb-3 tracking-widest uppercase">Kisan Mithr AI</h2>
+                        <p className="text-zinc-400 font-medium leading-relaxed mb-8">Empowering Indian Farmers with Intelligent Voice Assistance.</p>
+                        <div className="px-8 py-3.5 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 uppercase tracking-widest text-sm">
+                            Tap to Begin
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Sidebar - Resizable container implemented inside */}
+            {/* Sidebar */}
             <Sidebar
                 chats={chats}
                 activeChatId={activeChatId}
@@ -855,27 +863,31 @@ const VoiceAssistant = () => {
             />
 
             {/* Main Feature Area */}
-            <div className="flex-1 flex flex-col h-full relative z-10 transition-all">
+            <div className="flex-1 flex flex-col h-full relative z-10">
+                
                 {/* Top Glass Header */}
-                <header className="absolute top-0 left-0 w-full px-2 sm:px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-md z-[60] flex items-center justify-between">
-                    {/* Left Controls */}
-                    <div className="flex items-center gap-3 z-10">
+                <header className="absolute top-0 left-0 w-full px-4 sm:px-8 py-4 border-b border-white/[0.05] bg-black/40 backdrop-blur-2xl z-[60] flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 lg:hidden text-zinc-100"
+                            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 lg:hidden text-zinc-100 transition-colors border border-white/10"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
-                        <h1 className="hidden lg:block text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest drop-shadow-md">Kisan Mithr AI</h1>
+                        <h1 className="hidden lg:block text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase drop-shadow-md">
+                            Kisan Mithr <span className="text-green-500">AI</span>
+                        </h1>
                     </div>
 
-                    {/* Mobile Dead-Center Title */}
-                    <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none lg:hidden z-0 w-max">
-                        <h1 className="text-base sm:text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-wider sm:tracking-widest drop-shadow-md">Kisan Mithr AI</h1>
+                    {/* Mobile Center Title */}
+                    <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none lg:hidden w-max">
+                        <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase">
+                            Kisan Mithr
+                        </h1>
                     </div>
 
                     {/* Right Controls */}
-                    <div className="flex items-center gap-1.5 sm:gap-3 z-10">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         <VoiceCharacterSelector 
                             language={language} 
                             setLanguage={setLanguage} 
@@ -885,13 +897,13 @@ const VoiceAssistant = () => {
                 </header>
 
                 {/* Centered Body */}
-                <div className="flex-1 flex flex-col justify-center items-center w-full pt-20 pb-4 relative h-full">
-                    <div className="w-full flex-1 overflow-hidden flex flex-col justify-center">
+                <div className="flex-1 flex flex-col w-full relative h-full pt-16">
+                    <div className="flex-1 w-full overflow-hidden flex flex-col justify-center">
                         <ChatWindow messages={displayMessages} assistantState={assistantState} />
                     </div>
 
-                    {/* Input Area */}
-                    <div className="w-full max-w-3xl px-4 md:px-8 mt-4 shrink-0 z-40">
+                    {/* Input Area (Upgraded Classic Style) */}
+                    <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 pb-6 sm:pb-8 shrink-0 z-40">
                         <InputArea
                             onSendMessage={handleSendMessage}
                             handleMicClick={handleMicClick}
@@ -900,8 +912,8 @@ const VoiceAssistant = () => {
                             inputMode={inputMode}
                             setInputMode={setInputMode}
                         />
-                        <div className="text-center mt-4 text-xs text-zinc-500">
-                            Kisan Mithr AI specializes in Indian agriculture. Answers are generated by AI.
+                        <div className="text-center mt-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] leading-none opacity-50">
+                            Professional Agritech Intelligence &bull; AI Powered
                         </div>
                     </div>
                 </div>

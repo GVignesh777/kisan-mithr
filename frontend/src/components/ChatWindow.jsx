@@ -13,19 +13,24 @@ const ChatWindow = ({ messages, assistantState }) => {
   // When there are no messages, show the Orb and welcome screen
   if (!messages || messages.length === 0) {
       return (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 w-full h-full relative z-10 transition-all">
-              <div className="mb-10 scale-125">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 w-full h-full relative z-10 transition-all animate-in fade-in zoom-in-95 duration-1000">
+              <div className="mb-12 scale-110 sm:scale-125">
                  <VoiceOrb state={assistantState} />
               </div>
-              <h2 className="text-3xl font-bold text-white mb-4 text-center">
-                  Welcome to <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest">Kisan Mithr AI</span>
-              </h2>
-              <p className="text-zinc-400 max-w-md text-center text-lg leading-relaxed">
-                  Your smart agriculture assistant. Ask me about crop protection, healthy fertilizers, weather expectations, or modern farming methodologies.
-              </p>
+              <div className="max-w-xl text-center">
+                <h2 className="text-3xl sm:text-4xl font-black text-white mb-4 tracking-tight">
+                    Welcome to <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase">Kisan Mithr AI</span>
+                </h2>
+                <div className="h-0.5 w-16 bg-green-500/30 mx-auto mb-6 rounded-full" />
+                <p className="text-zinc-400 text-base sm:text-lg font-medium leading-relaxed px-4">
+                    Your smart agriculture assistant. Ask me about crop protection, healthy fertilizers, weather expectations, or modern farming methodologies.
+                </p>
+              </div>
           </div>
       );
   }
+
+
 
   // Active chat view
   return (

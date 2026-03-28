@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Plus, MoreHorizontal, Edit2, Trash2, X, Check } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -42,12 +42,15 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
   return (
     <div 
         onClick={() => !isEditing && onSelect(chat.id)}
-        className={`group relative flex items-center justify-between w-full p-2.5 rounded-lg mb-1 cursor-pointer transition-colors duration-200
-            ${isActive ? 'bg-green-800/40 text-white' : 'hover:bg-green-800/20 text-zinc-300 hover:text-white'}
+        className={`group relative flex items-center justify-between w-full p-2.5 rounded-xl mb-1.5 cursor-pointer transition-all duration-300 border
+            ${isActive 
+                ? 'bg-green-600/20 border-green-500/30 text-white shadow-[0_0_15px_rgba(34,197,94,0.1)]' 
+                : 'bg-transparent border-transparent hover:bg-white/5 text-zinc-400 hover:text-white'
+            }
         `}
     >
       <div className="flex items-center gap-3 overflow-hidden w-full">
-        <MessageSquare size={16} className={`shrink-0 ${isActive ? 'text-green-400' : 'text-zinc-500'}`} />
+        <MessageSquare size={16} className={`shrink-0 transition-colors ${isActive ? 'text-green-400' : 'text-zinc-500 group-hover:text-zinc-400'}`} />
         
         {isEditing ? (
             <input
@@ -56,35 +59,35 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
                 onChange={(e) => setEditTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full bg-black/50 border border-green-500 rounded px-2 py-0.5 text-sm text-white focus:outline-none"
+                className="w-full bg-black/40 border border-green-500/50 rounded-lg px-2 py-1 text-sm text-white focus:outline-none"
             />
         ) : (
-            <div className={`text-sm truncate w-full pr-6 ${isActive ? 'font-medium' : ''}`}>
-                {chat.title || "New Conversation"}
+            <div className={`text-[13px] truncate w-full pr-6 tracking-wide ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {chat.title || "New Consultation"}
             </div>
         )}
       </div>
 
       {isActive && !isEditing && (
-        <div className="absolute right-2 flex items-center bg-gradient-to-l from-emerald-900/90 from-60% pl-4">
+        <div className="absolute right-2 flex items-center">
             <button 
                 onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                className="p-1 hover:text-white text-zinc-400 focus:outline-none"
+                className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-white transition-all focus:outline-none"
             >
-                <MoreHorizontal size={16} />
+                <MoreHorizontal size={14} />
             </button>
             
             {showMenu && (
-                <div ref={menuRef} className="absolute right-0 top-8 w-32 bg-zinc-800 border border-zinc-700 rounded-md shadow-xl z-50 overflow-hidden text-sm">
+                <div ref={menuRef} className="absolute right-0 top-9 w-36 bg-green-950/95 backdrop-blur-3xl border border-white/10 rounded-xl shadow-2xl z-[70] overflow-hidden p-1">
                     <button 
                         onClick={(e) => { e.stopPropagation(); setIsEditing(true); setShowMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-left text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/5 hover:text-white transition-colors rounded-lg"
                     >
-                        <Edit2 size={14} /> Rename
+                        <Edit2 size={14} className="text-green-500" /> Rename
                     </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); onDelete(chat.id); setShowMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                        className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-400 transition-colors rounded-lg"
                     >
                         <Trash2 size={14} /> Delete
                     </button>
@@ -94,9 +97,9 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
       )}
 
       {isEditing && (
-        <div className="absolute right-2 flex gap-1 z-10 bg-black/50 px-1 rounded">
-            <button onClick={handleSave} className="p-1 hover:text-green-400 text-zinc-400"><Check size={14} /></button>
-            <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditTitle(chat.title); }} className="p-1 hover:text-red-400 text-zinc-400"><X size={14} /></button>
+        <div className="absolute right-2 flex gap-1 z-10 p-1">
+            <button onClick={handleSave} className="p-1 text-green-400 hover:text-green-300 transition-colors"><Check size={14} /></button>
+            <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditTitle(chat.title); }} className="p-1 text-red-400 hover:text-red-300 transition-colors"><X size={14} /></button>
         </div>
       )}
     </div>
@@ -105,7 +108,7 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
 
 
 const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, onEditChat, isOpen, setIsOpen }) => {
-  const [width, setWidth] = useState(260); // Default ChatGPT width
+  const [width, setWidth] = useState(260);
   const sidebarRef = useRef(null);
   const isDragging = useRef(false);
   const location = useLocation();
@@ -120,24 +123,20 @@ const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, o
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isDragging.current) return;
-      
       let newWidth = e.clientX;
-      if (newWidth < 220) newWidth = 220; // Min width as per requirements
-      if (newWidth > 400) newWidth = 400; // Max width
-      
+      if (newWidth < 240) newWidth = 240;
+      if (newWidth > 450) newWidth = 450;
       setWidth(newWidth);
     };
 
     const handleMouseUp = () => {
       isDragging.current = false;
       document.body.style.cursor = 'default';
-      // Optional: Save width to local storage
       localStorage.setItem('kisan_sidebar_width', width.toString());
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -145,95 +144,86 @@ const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, o
   }, [width]);
 
   useEffect(() => {
-      const savedWidth = localStorage.getItem('kisan_sidebar_width');
-      if (savedWidth) setWidth(parseInt(savedWidth, 10));
+    const savedWidth = localStorage.getItem('kisan_sidebar_width');
+    if (savedWidth) setWidth(parseInt(savedWidth, 10));
   }, []);
-
-  const NavLink = ({ to, icon, label }) => {
-      const isActive = location.pathname === to;
-      return (
-          <Link to={to} className={`flex items-center gap-3 px-3 py-2 rounded-md mb-1 transition-colors text-sm ${isActive ? 'bg-green-600/30 text-white font-medium shadow-[0_0_10px_rgba(74,222,128,0.2)]' : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'}`}>
-              <span className={isActive ? 'text-green-400' : 'text-zinc-500'}>{icon}</span>
-              {label}
-          </Link>
-      );
-  };
 
   return (
     <>
       {/* Mobile Backdrop */}
       {isMobile && isOpen && (
           <div 
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md z-[55] lg:hidden animate-in fade-in duration-500"
               onClick={() => setIsOpen(false)}
           />
       )}
 
       <div 
           ref={sidebarRef}
-          style={{ width: isMobile ? '280px' : `${width}px` }}
+          style={{ width: isMobile ? '300px' : `${width}px` }}
           className={`
-              h-screen shrink-0 bg-green-900/90 lg:bg-green-900/40 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.3)] 
-              flex flex-col border-r border-white/10 z-[60] transition-transform duration-300
+              h-screen shrink-0 bg-green-950/95 lg:bg-green-950/40 backdrop-blur-[40px] shadow-2xl
+              flex flex-col border-r border-white/5 z-[60] transition-all duration-500 ease-in-out
               ${isMobile ? 'fixed inset-y-0 left-0' : 'relative'}
               ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}
           `}
       >
-      {/* New Chat & Dashboard Navigation */}
-      <div className="p-4 border-b border-white/5 space-y-1">
-          <button 
+        {/* New Chat Button */}
+        <div className="px-6 py-8">
+            <button 
               onClick={onNewChat}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-4 border border-green-500/30 bg-green-600/20 rounded-md text-sm font-medium hover:bg-green-600/40 hover:border-green-400/50 transition-all duration-300 text-white shadow-sm"
-          >
-              <Plus size={18} className="text-green-400" />
-              New Chat
-          </button>
-
-          <NavLink to="/" icon={<MessageSquare size={16}/>} label="Smart Assistant" />
-          <NavLink to="/weather" icon={<span style={{fontSize:'16px'}}>🌤️</span>} label="Weather Dashboard" />
-          <NavLink to="/market" icon={<span style={{fontSize:'16px'}}>📈</span>} label="Market Prices" />
-          <NavLink to="/crop-health" icon={<span style={{fontSize:'16px'}}>🛰️</span>} label="Crop Health Map" />
-          <NavLink to="/pest-detect" icon={<span style={{fontSize:'16px'}}>🐛</span>} label="Pest Detector" />
-          <NavLink to="/farm-profile" icon={<span style={{fontSize:'16px'}}>⚙️</span>} label="Farm Profile" />
-      </div>
-
-      {/* Chat History List */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-4">
-          <div className="text-xs font-semibold text-zinc-500 mb-3 px-2 uppercase tracking-wider">
-              Recent Chats
-          </div>
-          {chats.slice().reverse().map(chat => (
-              <ChatItem 
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === activeChatId}
-                  onSelect={onSelectChat}
-                  onDelete={onDeleteChat}
-                  onEdit={onEditChat}
-              />
-          ))}
-          {chats.length === 0 && (
-              <div className="text-zinc-500 text-sm px-2 mt-4 text-center">
-                  No previous conversations
-              </div>
-          )}
-      </div>
-
-      {/* Resize Handle (Desktop Only) */}
-      {!isMobile && (
-        <div 
-            className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-green-400/50 active:bg-green-400/80 transition-colors z-50 flex items-center group"
-            onMouseDown={() => {
-                isDragging.current = true;
-                document.body.style.cursor = 'col-resize';
-            }}
-        >
-            <div className="hidden group-hover:block w-0.5 h-10 bg-green-300/80 mx-auto rounded-full" />
+              className="group w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl text-[13px] font-black tracking-widest uppercase transition-all duration-300 hover:shadow-[0_8px_30px_rgb(34,197,94,0.3)] hover:scale-[1.02] active:scale-95 text-white"
+            >
+              <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
+              New Consultation
+            </button>
         </div>
-      )}
-    </div>
+
+        {/* Chat History List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-8 mt-2">
+            <div className="text-[10px] font-black text-zinc-600 mb-4 px-3 uppercase tracking-[3px] flex items-center justify-between opacity-70">
+                <span>Recent History</span>
+                <span className="bg-white/5 px-2 py-0.5 rounded text-[8px]">{chats.length}</span>
+            </div>
+            <div className="space-y-0.5">
+                {chats.slice().reverse().map(chat => (
+                    <ChatItem 
+                        key={chat.id}
+                        chat={chat}
+                        isActive={chat.id === activeChatId}
+                        onSelect={onSelectChat}
+                        onDelete={onDeleteChat}
+                        onEdit={onEditChat}
+                    />
+                ))}
+            </div>
+            {chats.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center opacity-20">
+                    <MessageSquare size={32} className="text-zinc-600 mb-3" />
+                    <p className="text-[10px] font-black text-zinc-500 tracking-[0.2em]">NO CONVERSATIONS</p>
+                </div>
+            )}
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="p-6 border-t border-white/5 bg-black/10">
+            <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-full bg-green-950 border border-green-500/30 flex items-center justify-center text-[10px] font-black text-green-400">
+                    KM
+                 </div>
+                 <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate uppercase tracking-tighter">System Ready</p>
+                    <p className="text-[10px] text-green-500 font-bold flex items-center gap-1.5 leading-none mt-1 uppercase tracking-widest">
+                        <span className="w-1 h-1 bg-green-500 rounded-full animate-ping" />
+                        Online
+                    </p>
+                 </div>
+            </div>
+        </div>
+      </div>
     </>
   );
 };
 
 export default Sidebar;
+
