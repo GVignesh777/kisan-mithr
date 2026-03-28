@@ -29,7 +29,20 @@ const MessageBubble = ({ message, isTypingIndicator = false }) => {
                 {isUser ? 'You' : 'Kisan Mithr AI'}
             </span>
             {message.timestamp && (
-                <span className="text-[10px] text-zinc-400 ml-4">{message.timestamp}</span>
+                <span className="text-[10px] text-zinc-400 ml-4">
+                    {(() => {
+                        const ts = message.timestamp;
+                        if (!ts) return '';
+                        // If it's already a short time string like "10:30 AM", return it
+                        if (typeof ts === 'string' && ts.length <= 10) return ts;
+                        // Otherwise it's likely an ISO string from MongoDB
+                        try {
+                            const d = new Date(ts);
+                            if (isNaN(d.getTime())) return ts; // fallback if invalid
+                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        } catch(e) { return ts; }
+                    })()}
+                </span>
             )}
         </div>
 

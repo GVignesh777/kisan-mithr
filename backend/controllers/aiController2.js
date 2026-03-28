@@ -1,5 +1,4 @@
 const Groq = require('groq-sdk');
-const {  ElevenLabsClient  } = require('elevenlabs');
 const dotenv = require('dotenv');
 const User = require('../models/User');
 const axios = require('axios');
@@ -20,7 +19,9 @@ exports.askAI = async (req, res) => {
     try {
         const { userMessage, message, language, userId, chatId } = req.body;
         const finalMessage = message || userMessage;
-
+        
+        console.error(`[AskAI] HIT: User=${userId}, Chat=${chatId}, MsgLen=${finalMessage?.length}`);        
+        console.log(`[AskAI] Received req: User=${userId}, Chat=${chatId}, MessageLen=${finalMessage?.length}`);
         if (!finalMessage) {
             return res.status(400).json({ error: 'message or userMessage is required' });
         }
@@ -32,12 +33,13 @@ exports.askAI = async (req, res) => {
 
         // 1. Fetch History Memory (Gemini-style session persistence)
         let history = [];
+        let conversationDoc = null;
         if (chatId && mongoose.Types.ObjectId.isValid(chatId)) {
             try {
-                const conv = await Conversation.findById(chatId);
-                if (conv && conv.messages) {
+                conversationDoc = await Conversation.findById(chatId);
+                if (conversationDoc && conversationDoc.messages) {
                     // Map history to OpenAI/Groq format (user/assistant)
-                    history = conv.messages.slice(-6).map(m => ({
+                    history = conversationDoc.messages.slice(-6).map(m => ({
                         role: m.role === 'ai' ? 'assistant' : m.role,
                         content: m.content
                     }));
@@ -99,95 +101,100 @@ exports.askAI = async (req, res) => {
             } catch (e) {}
         }
 
-        const historyString = history.length > 0 
-            ? history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join('\n')
-            : "No previous relevant messages in this session.";
-
-        const systemPrompt = `You are an advanced AI voice assistant for "Kisan Mithr", designed ONLY to help with agriculture and farming-related topics.
-
-Your responses must adapt dynamically based on the user's question.
-
-Rules:
-- If the question is simple, factual, or yes/no → respond in ONE SHORT sentence.
-- If the question needs explanation → respond in 2–4 short sentences.
-- If the question is complex → respond in multiple short sentences, clearly broken into separate lines.
-- Always prefer SHORT, NATURAL, SPOKEN language.
-- Avoid long paragraphs.
-- Use line breaks to create natural pauses for speech.
-- Do NOT over-explain.
-- Do NOT include unnecessary details unless asked.
-- Make responses sound like a human speaking, not writing.
-
-Voice Optimization Rules:
-- Each sentence should be easy to convert into speech.
-- Keep sentences under 12–15 words.
-- Use simple and clear words.
-- Add natural conversational starters when appropriate (like “Okay,” “So,” “Here’s the thing,”).
-
-Output Formatting:
-- Each sentence MUST be on a new line.
-- Ensure responses can be split easily for text-to-speech chunking.
-- NO MARKDOWN: Never use #, *, or ** symbols. Use spoken words for structure.
-- TEXT-ONLY: Do not include formatting symbols that are not meant to be spoken.
+        // Removed manual history string to prevent LLaMA 3 from hallucinating transcript continuations
+        const systemPrompt = `You are "Kisan Mithr", a professional and warm AI Agriculture Assistant. 
+Your goal is to provide a "Gemini Voice Call" experience: perfectly conversational, helpful, and human-like.
 
 --------------------------------------------------
-🌾 DOMAIN RESTRICTION (STRICT)
+🎙️ CONVERSATIONAL STYLE (GEMINI-MODE)
 --------------------------------------------------
-You must ONLY respond to queries related to:
-- Farming and agriculture (crops, plants, trees, soil, fertilizers, irrigation).
-- Pest control, crop diseases, and weather impact on farming.
-- Government schemes for farmers and agricultural market prices.
+- Sound like a supportive companion, NOT a cold AI.
+- Use natural, friendly, and HUMAN-LIKE language.
+- Use conversational markers naturally (e.g., "Oh, that's a great question!", "I see", "Alright, let me help you with that", "Hmm, interesting").
+- If the user seems worried about their crops, be empathetic. If they are happy, share their excitement.
+- Provide a concise but complete answer (usually 2-5 sentences) so the assistant provides enough detail while staying fast.
+- Never use markdown like #, *, or bullet points. Use plain text for voice.
 
-If the user asks anything outside these topics or if the input seems disconnected from farming:
-→ Politely refuse and guide them back.
-Example: "I'm here to help with farming and agriculture-related questions. Please ask something related to that."
+--------------------------------------------------
+💬 VOICE OPTIMIZATION (NO MARKDOWN)
+--------------------------------------------------
+- STRICTOR RULE: Never use #, *, **, or bullet points.
+- TEXT-ONLY: Your output is converted directly to speech. Use words, not symbols.
+- LINE BREAKS: Use a new line for every sentence to create natural pauses.
+- Each sentence should be clear and easy for a human to hear.
 
 --------------------------------------------------
 🌐 LANGUAGE MIRRORING (CRITICAL)
 --------------------------------------------------
 - IMPORTANT: Always respond in the SAME LANGUAGE as the user.
-- If the user speaks Telugu, respond in Telugu.
-- If the user speaks Hindi, respond in Hindi.
-- If the user speaks English, respond in English.
-- If they use a mix (Hinglish/Tenglish), you may use a similar mix, but prioritize the primary Indian language if used.
-- Your goal is to make the user feel comfortable in their native tongue.
+- User spoke: ${langContext}
+- If User speaks Telugu -> Response MUST be Telugu.
+- If User speaks Hindi -> Response MUST be Hindi.
+- If User speaks English -> Response MUST be English.
+- Use the user's preferred local terms for crops/tools if they use them.
 
 --------------------------------------------------
-🔐 USER CONTEXT (HISTORY & DATA)
+🌾 DOMAIN RESTRICT (STRICT)
 --------------------------------------------------
-User ID: ${userId || 'Unknown'}
+- You are an expert in Indian agriculture only.
+- If asked about movies, politics, or general trivia, politely guide them back to farming.
+
+--------------------------------------------------
+🔐 USER & FARM CONTEXT
+--------------------------------------------------
+User Name: ${userName}
 Location: ${userLocation}
 Farm Profile: ${farmContextString}
-Recent Weather: ${weatherContextString}
-Market Prices: ${marketContextString}
+Weather Context: ${weatherContextString}
+Market Context: ${marketContextString}
+--------------------------------------------------
+Always prioritize SPEED, CLARITY, and VOICE-FRIENDLY output. 
+Provide a concise but complete answer (usually 2-6 sentences) so the assistant provides enough detail while staying fast.
+STRICT RULE: Never use markdown like #, *, or bullet points. Use plain text for voice.`;
 
-Recent Conversation History:
-${historyString}
-
-Always prioritize SPEED, CLARITY, and VOICE-FRIENDLY output.`;
+        // Avoid double-appending the current user message if the DB sync already caught it
+        let messagesForLLM = history;
+        const lastMsg = history.length > 0 ? history[history.length - 1] : null;
+        if (!lastMsg || lastMsg.role !== 'user' || lastMsg.content !== finalMessage) {
+            messagesForLLM.push({ role: 'user', content: finalMessage });
+        }
+        
+        // LIMIT history to last 6 messages to avoid token limit
+        messagesForLLM = messagesForLLM.slice(-6);
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
                 { role: 'system', content: systemPrompt },
-                ...history,
-                { role: 'user', content: finalMessage }
+                ...messagesForLLM
             ],
             model: 'llama-3.1-8b-instant',
             temperature: 0.65,
             stream: true,
-            max_tokens: 600,
+            max_tokens: 1000,
         });
 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Transfer-Encoding', 'chunked');
 
+        let fullAiResponse = "";
         for await (const chunk of chatCompletion) {
             const content = chunk.choices[0]?.delta?.content || "";
             if (content) {
                 res.write(content);
+                fullAiResponse += content;
             }
         }
         res.end();
+
+        const { addMessageInternal } = require('./conversationController');
+        // 5. Save the complete AI Response to MongoDB
+        if (chatId && mongoose.Types.ObjectId.isValid(chatId)) {
+            await addMessageInternal({
+                conversationId: chatId,
+                role: 'assistant',
+                content: fullAiResponse
+            }).catch(e => console.error("Failed to save AI response via controller:", e));
+        }
     } catch (error) {
         console.error('Groq AI Error:', error);
         if (!res.headersSent) {
@@ -199,7 +206,6 @@ Always prioritize SPEED, CLARITY, and VOICE-FRIENDLY output.`;
 };
 
 // Instantiate clients outside so they aren't recreated
-let elevenlabs = null;
 let edgeTtsClient = null;
 
 // Helper to create a valid WAV header for raw PCM data
@@ -226,11 +232,7 @@ exports.generateAudio = async (req, res) => {
         // Force reload .env values from absolute path in case server is started from root
         dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
         
-        // Re-initialize client each time to ensure the latest API key is used
-        const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
-        console.log(`[TTS] Initializing ElevenLabs with Key Length: ${apiKey?.length || 0}`);
-        elevenlabs = new ElevenLabsClient({ apiKey });
-
+        // Using Sarvam AI as primary provider with Edge TTS as fallback
         const { text, language, voice } = req.body;
         
         if (!text) {
@@ -283,14 +285,16 @@ exports.generateAudio = async (req, res) => {
         }
 
         // Voice Overrides
-        if (voice === 'George') voiceId = "JBFqnCBsd6RMkjVDRZzb";
-        if (voice === 'Sarah') voiceId = "EXAVITQu4vr4xnSDxMaL";
-        if (voice === 'Charlie') voiceId = "IKne3meq5aSn9XLyUdCD";
-        if (voice === 'Hindi Expert') voiceId = "LEWCqaZJ8aD94fSLZit1";
-        if (voice === 'Telugu Expert') voiceId = "HH8sIQq8WOcER3Nu118i";
+        // Case-insensitive voice mapping for stability
+        const normalizedVoice = (voice || '').toLowerCase();
+        if (normalizedVoice.includes('sarah')) voiceId = "EXAVITQu4vr4xnSDxMaL";
+        else if (normalizedVoice.includes('george')) voiceId = "JBFqnCBsd6RMkjVDRZzb";
+        else if (normalizedVoice.includes('charlie')) voiceId = "IKne3meq5aSn9XLyUdCD";
+        else if (normalizedVoice.includes('hindi')) voiceId = "LEWCqaZJ8aD94fSLZit1";
+        else if (normalizedVoice.includes('telugu')) voiceId = "HH8sIQq8WOcER3Nu118i";
         
 
-        // Level 1: Sarvam AI (Primary)
+        // Level 1: Sarvam AI (Primary for all languages)
         if (process.env.SARVAM_API_KEY) {
             try {
                 console.log(`[TTS] Trying Sarvam AI for ${effectiveLang}...`);
@@ -316,24 +320,33 @@ exports.generateAudio = async (req, res) => {
                 }
 
                 const pcmBuffers = [];
-                const sampleRate = 22050; // High-quality requested rate
+                const sampleRate = 24000; // High-quality requested rate matching user payload
 
                 for (const chunk of textChunks) {
                     console.log(`[TTS] Requesting Sarvam PCM chunk (${chunk.length} chars)`);
                     const sarvamResponse = await axios.post('https://api.sarvam.ai/text-to-speech', {
-                        inputs: [chunk],
+                        text: chunk,
                         target_language_code: effectiveLang === 'en-IN' ? 'en-IN' : (effectiveLang === 'hi-IN' ? 'hi-IN' : 'te-IN'),
-                        speaker: 'sunny', 
+                        speaker: 'shreya', 
                         model: 'bulbul:v3',
-                        audio_format: 'linear16',
-                        sample_rate: sampleRate,
-                        pace: 1.1,
+                        pace: 1.0,
+                        speech_sample_rate: sampleRate,
+                        output_audio_codec: 'wav',
                         enable_preprocessing: true
                     }, {
                         headers: { 'api-subscription-key': process.env.SARVAM_API_KEY }
                     });
 
-                    if (sarvamResponse.data && sarvamResponse.data.audios && sarvamResponse.data.audios[0]) {
+                    // DEBUG: Log keys to verify V3 API structure
+                    console.log(`[TTS] Sarvam Response Status: ${sarvamResponse.status}, Keys: ${Object.keys(sarvamResponse.data)}`);
+
+                    if (sarvamResponse.data && sarvamResponse.data.audio) {
+                        const base64Len = sarvamResponse.data.audio.length;
+                        console.log(`[TTS] Received audio buffer (base64 length: ${base64Len})`);
+                        pcmBuffers.push(Buffer.from(sarvamResponse.data.audio, 'base64'));
+                    } else if (sarvamResponse.data && sarvamResponse.data.audios) {
+                        // Fallback for different API versions
+                        console.log(`[TTS] Using 'audios' fallback...`);
                         pcmBuffers.push(Buffer.from(sarvamResponse.data.audios[0], 'base64'));
                     }
                 }
@@ -353,34 +366,8 @@ exports.generateAudio = async (req, res) => {
             }
         }
 
-        // Level 2: ElevenLabs (Secondary)
+        // Level 2: Edge-TTS (Fallback if Sarvam fails or is missing)
         try {
-            console.log(`[TTS] Trying ElevenLabs. Voice ID: "${voiceId}" | Model: "eleven_multilingual_v2"`);
-
-            const audioStream = await elevenlabs.generate({
-                voice: voiceId,
-                text: cleanTextForTts,
-                model_id: "eleven_multilingual_v2",
-                output_format: "mp3_44100_128",
-            });
-
-            // Set headers for audio stream
-            res.setHeader('Content-Type', 'audio/mpeg');
-            res.setHeader('Transfer-Encoding', 'chunked');
-
-            // Evaluate stream type and pipe correctly
-            if (audioStream.pipe) {
-                 audioStream.pipe(res);
-            } else {
-                 for await (const chunk of audioStream) {
-                      res.write(chunk);
-                 }
-                 res.end();
-            }
-        } catch (elevenError) {
-            console.error('ElevenLabs failed. Status:', elevenError.status, 'Message:', elevenError.message);
-            
-            // Level 3: Edge-TTS (Tertiary Fallback)
             console.log(`[TTS] Falling back to Edge-TTS for ${effectiveLang}`);
             
             // Map languages to high-quality Microsoft Edge voices
@@ -403,6 +390,9 @@ exports.generateAudio = async (req, res) => {
             res.setHeader('Content-Type', 'audio/mpeg');
             res.setHeader('Content-Length', buffer.length);
             res.end(buffer);
+        } catch (edgeError) {
+            console.error('Edge-TTS Fallback failed:', edgeError);
+            res.status(500).json({ error: 'Failed to generate speech using completely all fallback attempts.' });
         }
         
     } catch (error) {
@@ -417,18 +407,51 @@ exports.transcribeAudio = async (req, res) => {
             return res.status(400).json({ error: 'No audio file provided' });
         }
 
-        // Use Groq Whisper for robust transcription
-        const transcription = await groq.audio.transcriptions.create({
-            file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
-            model: "whisper-large-v3",
-            prompt: "The audio is a mix of English, Hindi, and Telugu (Hinglish/Tenglish). Please transcribe exactly what is said, maintaining the language switches.",
-            response_format: "json"
-        });
+        const langCode = req.body.language || 'en-IN';
+        console.log(`STT Request: File=${req.file.originalname}, Lang=${langCode}`);
 
-        // Cleanup
+        let finalTranscript = "";
+
+        // 1. Try Sarvam AI STT (Saaras v3 - High accuracy for Indian languages)
+        if (process.env.SARVAM_API_KEY) {
+            try {
+                const formData = new FormData();
+                const fileBuffer = fs.readFileSync(req.file.path);
+                const fileBlob = new Blob([fileBuffer], { type: req.file.mimetype });
+                formData.append('file', fileBlob, req.file.originalname);
+                formData.append('language_code', langCode);
+                formData.append('model', 'saaras:v3'); // Use the latest v3 model
+
+                const sarvamRes = await axios.post('https://api.sarvam.ai/speech-to-text', formData, {
+                    headers: { 'api-subscription-key': process.env.SARVAM_API_KEY }
+                });
+
+                if (sarvamRes.data && sarvamRes.data.transcript) {
+                    finalTranscript = sarvamRes.data.transcript;
+                    console.log("Sarvam v3 Success:", finalTranscript);
+                }
+            } catch (sarvamErr) {
+                console.warn("Sarvam STT Failed, falling back to Whisper:", sarvamErr.response?.data || sarvamErr.message);
+            }
+        }
+
+        // 2. Fallback to Groq Whisper if Sarvam failed
+        if (!finalTranscript) {
+            const transcription = await groq.audio.transcriptions.create({
+                file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
+                model: "whisper-large-v3",
+                prompt: "The audio is a mix of English, Hindi, and Telugu (Hinglish/Tenglish). Please transcribe exactly what is said. DO NOT TRANSLATE.",
+                language: langCode.split('-')[0], // Whisper usually prefers just the language prefix
+                response_format: "json"
+            });
+            finalTranscript = transcription.text;
+            console.log("Whisper Fallback Success:", finalTranscript);
+        }
+
+        // Cleanup extracted file
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
-        res.json({ text: transcription.text });
+        res.json({ text: finalTranscript });
     } catch (error) {
         console.error('Transcription Error:', error);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);

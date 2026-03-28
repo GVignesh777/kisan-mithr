@@ -4,7 +4,6 @@ import ChatWindow from '../../components/ChatWindow';
 import InputArea from './InputArea';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
 import { Menu } from 'lucide-react';
-import { toast } from 'react-toastify';
 import useUserStore from '../../store/useUserStore';
 
 const VoiceAssistant = () => {
@@ -43,6 +42,7 @@ const VoiceAssistant = () => {
     // Audio Queue Management
     const audioQueueRef = useRef([]);
     const isPlayingQueueRef = useRef(false);
+    const expectedPlaybackIndexRef = useRef(0); // Tracks the strict chronological sequence of playback
     const audioCacheRef = useRef(new Map()); // text -> Blob URL
 
     const { user } = useUserStore();
@@ -54,6 +54,8 @@ const VoiceAssistant = () => {
     const audioUnlockedRef = useRef(audioUnlocked);
     const silenceTimeoutRef = useRef(null);
     const isStartedRef = useRef(false); // New: Prevent InvalidStateError
+    const lastWakeWordTimeRef = useRef(0);
+    const isProcessingRef = useRef(false); // Track if a turn is currently being processed
 
     // Update refs whenever state changes
     useEffect(() => { assistantStateRef.current = assistantState; }, [assistantState]);
@@ -93,11 +95,11 @@ const VoiceAssistant = () => {
     // Load from MongoDB initially
     useEffect(() => {
         if (!userId) return;
-        fetch(`${process.env.REACT_APP_API_URL}/api/chats/${userId}`)
+        fetch(`${process.env.REACT_APP_API_URL}/api/user/${userId}`)
             .then(res => res.json())
             .then(data => {
-                if (data.chats && data.chats.length > 0) {
-                    const formattedChats = data.chats.map(c => ({
+                if (data && data.length > 0) {
+                    const formattedChats = data.map(c => ({
                         ...c,
                         id: c._id
                     }));
@@ -106,7 +108,7 @@ const VoiceAssistant = () => {
                 }
             })
             .catch(e => console.error("Failed to load chats from Mongoose db", e));
-    }, []);
+    }, [userId]); // Fixed missing dependency for profile fetch
 
     // Cleanup speech/audio on unmount to prevent ghost speaking
     useEffect(() => {
@@ -134,8 +136,11 @@ const VoiceAssistant = () => {
         recognitionRef.current = recognition;
 
         const stopAndProcess = () => {
-            console.log("Silence detected. Stopping for processing...");
-            safeStop();
+            if (assistantStateRef.current === 'listening' && !isProcessingRef.current) {
+                isProcessingRef.current = true;
+                console.log("Silence detected. Stopping for processing...");
+                setAssistantState('thinking');
+            }
         };
 
         recognition.onresult = (event) => {
@@ -146,15 +151,26 @@ const VoiceAssistant = () => {
 
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
 
-            // Wake Word Handling
+            // 1. INTERRUPTION LOGIC: If AI is speaking and user starts talking, STOP AI immediately.
+            if (currentState === 'speaking' || currentState === 'thinking') {
+                if (currentResult.trim().length > 2) {
+                    console.log("Interruption detected! Stopping AI...");
+                    handleStopSpeaking(); // This stops TTS and resets state
+                    setAssistantState('listening');
+                    return;
+                }
+            }
+
+            // 2. Wake Word Handling
             if (currentState === 'idle') {
                 if (currentResult.includes('hey kisan') || currentResult.includes('kisan')) {
                     console.log("Wake word detected:", currentResult);
+                    lastWakeWordTimeRef.current = Date.now();
                     setAssistantState('listening');
                     setTranscript('');
                 }
             }
-            // Command Capture 
+            // 3. Command Capture 
             else if (currentState === 'listening') {
                 let finalTrans = '';
                 let interimTrans = '';
@@ -162,10 +178,20 @@ const VoiceAssistant = () => {
                     if (results[i].isFinal) finalTrans += results[i][0].transcript;
                     else interimTrans += results[i][0].transcript;
                 }
-                setTranscript(finalTrans || interimTrans);
-                // 2s Silence on Mobile, 2.5s on Desktop
-                const timeoutDelay = isMobile ? 2000 : 2500;
+                
+                const liveText = finalTrans || interimTrans;
+                setTranscript(liveText);
+
+                // 2.5s Silence for more natural speaking pace (prevents premature cutoffs)
+                const timeoutDelay = 2500;
                 silenceTimeoutRef.current = setTimeout(stopAndProcess, timeoutDelay);
+
+                // PARALLEL OPTIMIZATION: If we have a long enough final sentence, 
+                // we can start pre-processing immediately.
+                if (finalTrans.trim().split(' ').length >= 6) {
+                    console.log("Early trigger: Meaningful sentence detected.");
+                    stopAndProcess();
+                }
             }
         };
 
@@ -180,10 +206,21 @@ const VoiceAssistant = () => {
             if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
 
             const currentState = assistantStateRef.current;
-            if (currentState === 'listening') {
+            if (currentState === 'listening' && !isProcessingRef.current) {
+                // IMPORTANT: Browsers often stop the STT engine immediately after a short wake-word.
+                // We must IGNORE this onend if it happens within the first 1.5 seconds of listening,
+                // otherwise the assistant jumps to 'thinking' before the user can speak the command.
+                const timeSinceWake = Date.now() - lastWakeWordTimeRef.current;
+                if (timeSinceWake < 1500) {
+                    console.log("Ignoring premature onend after wake word. Restarting native STT for feedback.");
+                    setTimeout(safeStart, 200);
+                    return;
+                }
+
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                     mediaRecorderRef.current.stop();
                 }
+                isProcessingRef.current = true;
                 setAssistantState('thinking');
             }
             
@@ -311,52 +348,55 @@ const VoiceAssistant = () => {
                     });
                 }
 
-                // If we have recorded chunks, send to Whisper
+                // Reset processing flag for NEXT turn
+                const finalizeTurn = () => {
+                    isProcessingRef.current = false;
+                };
+
+                // If we have recorded chunks, send to Sarvam (as authority)
                 if (audioChunksRef.current.length > 0) {
                     const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
                     audioChunksRef.current = []; // Clear immediately after blob creation
                     
                     const formData = new FormData();
                     formData.append('audio', audioBlob, `recording.${audioExtRef.current}`);
-                    formData.append('language', language.split('-')[0]);
+                    formData.append('language', language); 
 
                     try {
-                        console.log("Sending audio to Whisper...");
+                        console.log("Sending audio to Sarvam STT (The Authority)...");
                         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transcript`, {
                             method: 'POST',
                             body: formData
                         });
 
-                        if (!res.ok) throw new Error("Whisper Fetch Failed");
+                        if (!res.ok) throw new Error("Sarvam Fetch Failed");
                         
                         const data = await res.json();
-                        const whisperText = data.text?.trim() || "";
-                        const nativeText = transcript.trim();
+                        const sarvamText = data.text?.trim() || "";
+                        const browserText = transcript.trim();
 
-                        // HEURISTIC: If Whisper returns very short text (possible hallucination) 
-                        // and Native STT has significantly more content, trust Native STT for local languages.
-                        const useWhisper = whisperText.length > 5 || nativeText.length < 3 || whisperText.split(' ').length > nativeText.split(' ').length;
-                        
-                        const finalText = useWhisper ? whisperText : nativeText;
+                        // HYBRID MERGE: Use Sarvam if it has content, fallback to Browser if Sarvam hallucinated/failed
+                        const finalText = (sarvamText.split(' ').length > 1) ? sarvamText : browserText;
 
                         if (finalText.length > 1) {
-                            console.log(useWhisper ? "Using Whisper Transcript:" : "Using Native Fallback (Whisper too short):", finalText);
                             handleSendMessage(finalText);
                             setTranscript('');
+                            finalizeTurn();
                             return;
                         }
                     } catch (err) {
-                        console.error("Whisper Error, falling back to transcript:", err);
+                        console.error("Sarvam STT Error, falling back to native:", err);
                     }
                 }
 
-                // Fallback to native transcript if Whisper failed or no chunks
+                // Fallback to native transcript if Sarvam failed or no chunks
                 if (transcript.trim() !== '') {
                     handleSendMessage(transcript.trim());
                     setTranscript('');
                 } else {
                     setAssistantState('idle');
                 }
+                finalizeTurn();
             };
             processVoiceInput();
         }
@@ -400,42 +440,71 @@ const VoiceAssistant = () => {
         } catch (e) { console.error('Error deleting chat from DB', e); }
     };
 
-    const syncChatToMongo = (chatIdToSync, currentChatsState) => {
-        const chatData = currentChatsState.find(c => c.id === chatIdToSync);
-        if (!chatData) return;
+    const syncChatToMongo = async (chatIdToSync, currentChatsState) => {
+        console.error(`[Sync] ENTERED syncChatToMongo. UserID=${userId}, ChatIDToSync=${chatIdToSync}`);
+        const chatData = currentChatsState?.find(c => c.id === chatIdToSync);
+        
+        if (!chatData) {
+            console.error(`[Sync] ChatData not found for ID: ${chatIdToSync}`);
+            return null;
+        }
+        if (!chatData.messages || chatData.messages.length === 0) {
+            console.warn("[Sync] ChatData has no messages.");
+            return null;
+        }
 
-        // Ensure the temp user id is 24 hex characters so Mongoose ObjectId casting doesn't fail
-        if (!userId || userId.length !== 24) return;
-        const safeUserId = userId;
+        if (!userId) {
+            console.error("[Sync] ABORTING: UserID is null or undefined in frontend store");
+            return null;
+        }
 
-        // We pass the chatId to the backend (mapped logically from _id or explicitly passed)
-        // The backend will create a new doc if _id isn't found, or update if it exists.
-        fetch(`${process.env.REACT_APP_API_URL}/api/chats/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: safeUserId,
-                chatId: chatIdToSync.length === 24 ? chatIdToSync : null, // only send _id proxy if it's a valid 24 hex char Mongo ID 
-                title: chatData.title || userTextPreviewRef.current,
-                messages: chatData.messages
-            })
-        })
-            .then(res => res.json())
-            .then(data => {
-                // If the backend generated a new MongoDB _id for this new chat, we need to update our frontend state to use that real _id instead of our temporary timestamp ID
-                if (data.chat && data.chat._id && chatIdToSync !== data.chat._id) {
-                    chatIdMapRef.current[chatIdToSync] = data.chat._id;
-                    setChats(prev => prev.map(c => c.id === chatIdToSync ? { ...c, id: data.chat._id } : c));
-                    if (activeChatId === chatIdToSync) setActiveChatId(data.chat._id);
+        let syncId = chatIdMapRef.current[chatIdToSync] || chatIdToSync;
+        console.log(`[Sync] Using SyncID: ${syncId}`);
+
+        // 1. Create a new conversation doc if it doesn't exist yet
+        if (syncId.length !== 24) {
+            try {
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/api/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId })
+                });
+                const newConv = await res.json();
+                if (newConv && newConv._id) {
+                    syncId = newConv._id;
+                    chatIdMapRef.current[chatIdToSync] = syncId;
+                    setChats(prev => prev.map(c => c.id === chatIdToSync ? { ...c, id: syncId } : c));
+                    if (activeChatId === chatIdToSync) setActiveChatId(syncId);
                 }
-            })
-            .catch(e => console.error("Full mongo sync error:", e));
+            } catch (e) {
+                console.error("Failed to create conversation:", e);
+                return null;
+            }
+        }
+
+        // 2. Append the latest message safely to prevent overwriting AI responses
+        const latestMessage = chatData.messages[chatData.messages.length - 1];
+        
+        try {
+            await fetch(`${process.env.REACT_APP_API_URL}/api/addMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId: syncId,
+                    role: latestMessage.role === 'ai' ? 'assistant' : latestMessage.role,
+                    content: latestMessage.content
+                })
+            });
+            // Return proxy data structure expected by awaiters
+            return { chat: { _id: syncId } };
+        } catch (e) {
+            console.error("Failed to append message:", e);
+            return null;
+        }
     };
 
     // Track temporary frontend timestamp IDs to real MongoDB ObjectIds asynchronously
     const chatIdMapRef = useRef({});
-    // Ref strictly for title preview usage to avoid stale state in closure
-    const userTextPreviewRef = useRef('');
 
     const appendMessageToChat = (chatId, messageObj) => {
         setChats(prevChats => {
@@ -443,8 +512,8 @@ const VoiceAssistant = () => {
             if (chatIdx === -1) return prevChats;
             
             const chat = prevChats[chatIdx];
-            // Check existence by timestamp and role only (content is dynamic)
-            const exists = chat.messages.some(m => m.timestamp === messageObj.timestamp && m.role === messageObj.role);
+            // Check existence by unique ID only to ensure turn-persistence
+            const exists = chat.messages.some(m => messageObj.id && m.id === messageObj.id);
             if (exists) return prevChats;
 
             const newChats = [...prevChats];
@@ -461,12 +530,16 @@ const VoiceAssistant = () => {
             if (chatIdx === -1) return prevChats;
 
             const chat = prevChats[chatIdx];
-            const msgIndex = chat.messages.findIndex(m => m.timestamp === messageObj.timestamp && m.role === messageObj.role);
+            // Match specifically by ID to prevent overwriting same-minute messages
+            const msgIndex = chat.messages.findIndex(m => messageObj.id && m.id === messageObj.id);
             
-            if (msgIndex === -1) return prevChats;
-
             const updatedMessages = [...chat.messages];
-            updatedMessages[msgIndex] = { ...updatedMessages[msgIndex], content: updatedText };
+            if (msgIndex === -1) {
+                // UPSERT: If not found yet (race condition), append now
+                updatedMessages.push({ ...messageObj, content: updatedText });
+            } else {
+                updatedMessages[msgIndex] = { ...updatedMessages[msgIndex], content: updatedText };
+            }
             
             const newChats = [...prevChats];
             newChats[chatIdx] = { ...chat, messages: updatedMessages };
@@ -475,6 +548,7 @@ const VoiceAssistant = () => {
     };
 
     const handleSendMessage = async (userText) => {
+        console.error(`[HandleSend] HIT: User=${userId}, Chat=${activeChatId}, Msg=${userText?.substring(0, 20)}...`);
         // Strip out any accidental wake word triggers from the actual command
         const cleanUserText = userText.replace(/^(hey\s+kisan|kisan)\b[,.\s]*/i, '').trim();
         
@@ -485,45 +559,42 @@ const VoiceAssistant = () => {
         }
 
         let currentChatId = activeChatId;
-        userTextPreviewRef.current = cleanUserText.length > 30 ? cleanUserText.substring(0, 30) + '...' : cleanUserText;
-
-        // Create a brand new chat if none exists
-        if (!currentChatId || chats.length === 0) {
-            const newId = Date.now().toString();
-            currentChatId = newId;
-            const newChat = { id: newId, title: '', messages: [] };
-            setChats(prev => [...prev, newChat]);
-            setActiveChatId(newId);
-        }
-
+        const isNewChat = !currentChatId || chats.length === 0;
+        const newTempId = Date.now().toString();
+        
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const userMessageObj = { role: 'user', content: cleanUserText, timestamp };
+        const userMessageObj = { id: 'u-' + Date.now(), role: 'user', content: cleanUserText, timestamp };
 
-        // Update Messages State locally first
         let updatedChatsPostUser = [];
-        setChats(prevChats => {
-            const newChatsState = prevChats.map(chat => {
+        if (isNewChat) {
+            currentChatId = newTempId;
+            const newChat = { 
+                id: newTempId, 
+                title: cleanUserText.length > 30 ? cleanUserText.substring(0, 30) + '...' : cleanUserText, 
+                messages: [userMessageObj] 
+            };
+            updatedChatsPostUser = [...chats, newChat];
+            setActiveChatId(newTempId);
+        } else {
+            updatedChatsPostUser = chats.map(chat => {
                 if (chat.id === currentChatId) {
-                    let newTitle = chat.title;
-                    if (!newTitle) {
-                        newTitle = cleanUserText.length > 30 ? cleanUserText.substring(0, 30) + '...' : cleanUserText;
-                    }
-                    return { ...chat, title: newTitle, messages: [...chat.messages, userMessageObj] };
+                    return { ...chat, messages: [...chat.messages, userMessageObj] };
                 }
                 return chat;
             });
-            updatedChatsPostUser = newChatsState;
-            return newChatsState;
-        });
+        }
+
+        setChats(updatedChatsPostUser);
 
         // Sync user message to MongoDB
-        setTimeout(() => syncChatToMongo(currentChatId, updatedChatsPostUser), 100);
+        // Use the explicitly calculated state to avoid React batching race conditions
+        await syncChatToMongo(currentChatId, updatedChatsPostUser);
 
+        const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
         setAssistantState('thinking');
 
         try {
             const langMap = { 'en-IN': 'English', 'te-IN': 'Telugu', 'hi-IN': 'Hindi' };
-            const syncId = chatIdMapRef.current[currentChatId] || currentChatId;
 
             const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ask-ai`, {
                 method: 'POST',
@@ -543,18 +614,20 @@ const VoiceAssistant = () => {
             let fullAiText = '';
             let sentenceBuffer = '';
             const aiTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const aiMessageObj = { role: 'ai', content: '', timestamp: aiTimestamp };
+            const aiMessageObj = { id: 'ai-' + Date.now(), role: 'ai', content: '', timestamp: aiTimestamp };
 
             // Reset Audio Queue for new interaction
             audioQueueRef.current = [];
             isPlayingQueueRef.current = false;
+            expectedPlaybackIndexRef.current = 0; // Reset expectation
+            let segmentIndexCounter = 0;
 
             // PRE-APPEND Empty AI Message so it appears immediately in UI
             setChats(prevChats => {
                 const chat = prevChats.find(c => c.id === currentChatId);
                 if (!chat) return prevChats;
-                // Avoid double append if already exists
-                if (chat.messages.some(m => m.timestamp === aiTimestamp && m.role === 'ai')) return prevChats;
+                // Avoid double append if already exists by checking the unique ID
+                if (chat.messages.some(m => m.id === aiMessageObj.id)) return prevChats;
                 return prevChats.map(c => c.id === currentChatId ? { ...c, messages: [...c.messages, aiMessageObj] } : c);
             });
 
@@ -564,17 +637,16 @@ const VoiceAssistant = () => {
 
                 const chunk = decoder.decode(value, { stream: true });
                 fullAiText += chunk;
-                sentenceBuffer += chunk;
+                sentenceBuffer += chunk; // Fixed: Missing this line caused audio silence
                 
                 // Update the pre-appended message in real-time
                 updateMessageInChat(currentChatId, aiMessageObj, fullAiText);
 
-                // Detect sentence boundaries to trigger TTS early
-                const sentenceEndRegex = /[.!?](\s+|$)/;
+                const sentenceEndRegex = /[.!?](?:\s+|$)/;
                 if (sentenceEndRegex.test(sentenceBuffer)) {
-                    // Split sentences but keep delimiters
-                    const parts = sentenceBuffer.split(/([.!?](\s+|$))/);
-                    // parts looks like: ["Hello", ".", " ", "How are you", "?", "", ...]
+                    // Split sentences but keep delimiters using a non-capturing group for whitespace
+                    const parts = sentenceBuffer.split(/([.!?](?:\s+|$))/);
+                    // parts looks like: ["Hello", ". ", "How are you", "?", ""]
                     
                     let completeSentences = "";
                     let lastIndex = 0;
@@ -586,9 +658,8 @@ const VoiceAssistant = () => {
                     const remaining = parts.slice(lastIndex).join('');
                     
                     if (completeSentences.trim()) {
-                        console.log("Triggering segment TTS:", completeSentences.trim());
-                        speakText(completeSentences.trim(), language, aiMessageObj, currentChatId);
-                        isFirstSegment = false;
+                        console.log("Triggering segment TTS:", completeSentences.trim(), "Index:", segmentIndexCounter);
+                        speakText(completeSentences.trim(), language, aiMessageObj, currentChatId, segmentIndexCounter++);
                     }
                     sentenceBuffer = remaining;
                 }
@@ -596,7 +667,8 @@ const VoiceAssistant = () => {
 
             // Final flush for any remaining text without punctuation
             if (sentenceBuffer.trim()) {
-                speakText(sentenceBuffer.trim(), language, aiMessageObj, currentChatId);
+                console.log("Triggering final segment TTS:", sentenceBuffer.trim(), "Index:", segmentIndexCounter);
+                speakText(sentenceBuffer.trim(), language, aiMessageObj, currentChatId, segmentIndexCounter++);
             }
 
         } catch (error) {
@@ -612,7 +684,7 @@ const VoiceAssistant = () => {
         }
     };
 
-    const speakText = async (text, lang, messageToAppend = null, chatId = null) => {
+    const speakText = async (text, lang, messageToAppend = null, chatId = null, segmentIndex = 0) => {
         const detectLang = (input) => {
             if (/[\u0C00-\u0C7F]/.test(input)) return 'te-IN';
             if (/[\u0900-\u097F]/.test(input)) return 'hi-IN';
@@ -630,33 +702,43 @@ const VoiceAssistant = () => {
                 return;
             }
 
+            // Check indexing for sequential discipline
+            const nextItem = audioQueueRef.current[0];
+            if (nextItem.segmentIndex !== expectedPlaybackIndexRef.current) {
+                 isPlayingQueueRef.current = false;
+                 return;
+            }
+
             isPlayingQueueRef.current = true;
-            const { audio, text: segmentText, isFirst } = audioQueueRef.current.shift();
+            audioQueueRef.current.shift();
+            expectedPlaybackIndexRef.current++;
 
-            audio.onplay = () => {
-                setAssistantState('speaking');
+            setAssistantState('speaking');
+            const { type, payload, isFirst } = nextItem;
+
+            if (type === 'sarvam') {
+                const audio = payload;
+                audioRef.current = audio;
                 if (isFirst) appendMessageToChat(chatId, messageToAppend);
-            };
-
-            audio.onended = () => {
-                playNextInQueue();
-            };
-
-            audio.onerror = () => {
-                console.error("Audio playback error for segment:", segmentText);
-                playNextInQueue();
-            };
-
-            audio.play().catch(err => {
-                console.error("Audio play failed:", err);
-                playNextInQueue();
-            });
+                
+                audio.onended = () => playNextInQueue();
+                audio.onerror = () => playNextInQueue();
+                audio.play().catch(() => playNextInQueue());
+            } else {
+                // Fallback SpeechSynthesis
+                const utterance = payload;
+                if (isFirst) appendMessageToChat(chatId, messageToAppend);
+                
+                utterance.onend = () => playNextInQueue();
+                utterance.onerror = () => playNextInQueue();
+                window.speechSynthesis.speak(utterance);
+            }
         };
 
-        const addToQueue = (audioBlob, segmentText, isFirst) => {
-            const url = URL.createObjectURL(audioBlob);
-            const audio = new Audio(url);
-            audioQueueRef.current.push({ audio, text: segmentText, isFirst });
+        const addToQueue = (type, payload, segmentText, isFirst) => {
+            audioQueueRef.current.push({ type, payload, segmentText, isFirst, segmentIndex });
+            audioQueueRef.current.sort((a, b) => a.segmentIndex - b.segmentIndex);
+
             if (!isPlayingQueueRef.current) {
                 playNextInQueue();
             }
@@ -664,48 +746,48 @@ const VoiceAssistant = () => {
 
         if (audioCacheRef.current.has(text)) {
             const blob = audioCacheRef.current.get(text);
-            addToQueue(blob, text, messageToAppend !== null);
+            const url = URL.createObjectURL(blob);
+            addToQueue('sarvam', new Audio(url), text, messageToAppend !== null);
             return;
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s for stability
 
         try {
             const response = await fetch(`${process.env.REACT_APP_API_URL}/api/speak`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: text,
-                    language: effectiveLang,
-                    voice: selectedVoice
-                }),
+                body: JSON.stringify({ text, language: effectiveLang, voice: selectedVoice }),
                 signal: controller.signal
             });
 
             clearTimeout(timeoutId);
-
             if (!response.ok) throw new Error("Sarvam Error");
+            
             const blob = await response.blob();
             audioCacheRef.current.set(text, blob);
-            addToQueue(blob, text, messageToAppend !== null);
+            const url = URL.createObjectURL(blob);
+            addToQueue('sarvam', new Audio(url), text, messageToAppend !== null);
 
         } catch (err) {
-            console.warn(`TTS Fallback for: "${text.substring(0, 20)}..." | Reason: ${err.name === 'AbortError' ? 'Timeout' : 'Error'}`);
-            const cleanText = text.replace(/[#*`~_|>\[\]()\-]/g, "");
+            console.warn(`TTS Fallback for: "${text.substring(0, 20)}..." | ${err.message}`);
+            const cleanText = text.replace(/[#*`~_|>\[\]()-]/g, "");
             const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = effectiveLang;
             utterance.rate = 1.0;
-            utterance.onstart = () => {
-                setAssistantState('speaking');
-                if (messageToAppend !== null) appendMessageToChat(chatId, messageToAppend);
-            };
-            utterance.onend = () => {
-                if (!isPlayingQueueRef.current && audioQueueRef.current.length === 0) {
-                    setAssistantState('idle');
-                }
-            };
-            window.speechSynthesis.speak(utterance);
+            
+            // Sync fallback to a female voice if possible
+            const voices = window.speechSynthesis.getVoices();
+            const femaleVoice = voices.find(v => 
+                (v.lang.startsWith(effectiveLang.split('-')[0])) && 
+                (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || 
+                 v.name.toLowerCase().includes('heera') || v.name.toLowerCase().includes('samantha') || 
+                 v.name.toLowerCase().includes('google hindi') || v.name.toLowerCase().includes('online'))
+            );
+            if (femaleVoice) utterance.voice = femaleVoice;
+
+            addToQueue('fallback', utterance, text, messageToAppend !== null);
         }
     };
 
@@ -714,6 +796,7 @@ const VoiceAssistant = () => {
         if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
         audioQueueRef.current = [];
         isPlayingQueueRef.current = false;
+        expectedPlaybackIndexRef.current = 0; // Reset expectation on stop
         setAssistantState('idle');
     };
 
@@ -729,13 +812,19 @@ const VoiceAssistant = () => {
 
     const currentChat = activeChatId ? chats.find(c => c.id === activeChatId) : null;
 
+    // Gemini-style status mapping
+    const stateLabels = {
+        idle: 'Hey Kisan',
+        listening: 'Listening...',
+        thinking: 'Understanding...',
+        speaking: 'Speaking...'
+    };
+
     // Combine historical messages with the live voice transcript bubble (if active)
     const displayMessages = currentChat ? [...currentChat.messages] : [];
     if (transcript) {
-        // Strip wake word from live transcript bubble too
-        const cleanTranscript = transcript.replace(/^(hey\s+kisan|kisan)\b[,.\s]*/i, '').trim();
-        if (cleanTranscript) {
-            displayMessages.push({ role: 'user', content: cleanTranscript, timestamp: 'Listening...' });
+        if (transcript.trim()) {
+            displayMessages.push({ role: 'user', content: transcript.trim(), timestamp: stateLabels[assistantState] || 'Active' });
         }
     }
 
