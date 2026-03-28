@@ -103,7 +103,7 @@ exports.askAI = async (req, res) => {
             ? history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`).join('\n')
             : "No previous relevant messages in this session.";
 
-        const systemPrompt = `You are a real-time AI voice assistant.
+        const systemPrompt = `You are an advanced AI voice assistant for "Kisan Mithr", designed ONLY to help with agriculture and farming-related topics.
 
 Your responses must adapt dynamically based on the user's question.
 
@@ -127,6 +127,18 @@ Voice Optimization Rules:
 Output Formatting:
 - Each sentence MUST be on a new line.
 - Ensure responses can be split easily for text-to-speech chunking.
+
+--------------------------------------------------
+🌾 DOMAIN RESTRICTION (STRICT)
+--------------------------------------------------
+You must ONLY respond to queries related to:
+- Farming and agriculture (crops, plants, trees, soil, fertilizers, irrigation).
+- Pest control, crop diseases, and weather impact on farming.
+- Government schemes for farmers and agricultural market prices.
+
+If the user asks anything outside these topics or if the input seems disconnected from farming:
+→ Politely refuse and guide them back.
+Example: "I'm here to help with farming and agriculture-related questions. Please ask something related to that."
 
 --------------------------------------------------
 🔐 USER CONTEXT (HISTORY & DATA)
@@ -397,6 +409,7 @@ exports.transcribeAudio = async (req, res) => {
             file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
             model: "whisper-large-v3",
             prompt: "The user is an Indian farmer speaking in a mix of English, Telugu, and Hindi (Hinglish/Tenglish). Accurately capture the code-switching.",
+            language: req.body.language || undefined,
             response_format: "json"
         });
 
