@@ -150,12 +150,8 @@ const VoiceAssistant = () => {
             if (currentState === 'idle') {
                 if (currentResult.includes('hey kisan') || currentResult.includes('kisan')) {
                     console.log("Wake word detected:", currentResult);
-                    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-                    beep.volume = 0.2;
-                    beep.play().catch(() => { });
-                    setInputMode('voice');
-                    setTranscript('');
                     setAssistantState('listening');
+                    setTranscript('');
                 }
             }
             // Command Capture 
@@ -245,23 +241,34 @@ const VoiceAssistant = () => {
                             autoGainControl: true
                         } 
                     });
-                    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
-                    mediaRecorderRef.current.ondataavailable = (e) => {
+                    
+                    const recorder = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
+                    mediaRecorderRef.current = recorder;
+                    
+                    recorder.ondataavailable = (e) => {
                         if (e.data.size > 0) audioChunksRef.current.push(e.data);
                     };
-                    mediaRecorderRef.current.start();
-                    console.log("Direct Mic Capture (MediaRecorder) active.");
+
+                    recorder.onstart = () => {
+                        // BEEP ONLY WHEN RECORDING ACTUALLY STARTS
+                        const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                        beep.volume = 0.4;
+                        beep.play().catch(() => { });
+                        console.log("MediaRecorder started successfully.");
+                    };
+
+                    recorder.start();
+                    
+                    if (!isMobile) {
+                        setTimeout(safeStart, 100); 
+                    }
                 } catch (err) {
                     console.error("Direct Mic Capture failed:", err);
+                    setAssistantState('idle'); // Fallback to idle if mic fails
                 }
             };
             
             startMicCapture();
-
-            // Native STT for real-time feedback (Desktop ONLY)
-            if (!isMobile) {
-                setTimeout(safeStart, 100); 
-            }
         } else if (currentState === 'thinking' || currentState === 'speaking') {
             // Kill everything to reset hardware and avoid resonance
             safeStop();
@@ -296,32 +303,45 @@ const VoiceAssistant = () => {
     useEffect(() => {
         if (assistantState === 'thinking') {
             const processVoiceInput = async () => {
-                // If we have recorded chunks, send to Whisper for robust multi-mixed language support
+                // Wait for any pending recording to definitely stop and flush
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                    await new Promise((resolve) => {
+                        mediaRecorderRef.current.onstop = resolve;
+                        try { mediaRecorderRef.current.stop(); } catch(e) { resolve(); }
+                    });
+                }
+
+                // If we have recorded chunks, send to Whisper
                 if (audioChunksRef.current.length > 0) {
                     const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
+                    audioChunksRef.current = []; // Clear immediately after blob creation
+                    
                     const formData = new FormData();
                     formData.append('audio', audioBlob, `recording.${audioExtRef.current}`);
-                    formData.append('language', language.split('-')[0]); // Pass 'en', 'te', or 'hi' hint
+                    formData.append('language', language.split('-')[0]);
 
                     try {
-                        console.log("Sending audio to Whisper for multi-mixed transcript...");
+                        console.log("Sending audio to Whisper...");
                         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transcript`, {
                             method: 'POST',
                             body: formData
                         });
+
+                        if (!res.ok) throw new Error("Whisper Fetch Failed");
+                        
                         const data = await res.json();
-                        if (data.text) {
+                        if (data.text && data.text.trim().length > 1) {
                             console.log("Whisper Transcript:", data.text);
                             handleSendMessage(data.text);
                             setTranscript('');
                             return;
                         }
                     } catch (err) {
-                        console.error("Whisper fallback failed:", err);
+                        console.error("Whisper Error, falling back to transcript:", err);
                     }
                 }
 
-                // Fallback to browser transcript if Whisper fails or no audio recorded
+                // Fallback to native transcript if Whisper failed or no chunks
                 if (transcript.trim() !== '') {
                     handleSendMessage(transcript.trim());
                     setTranscript('');
@@ -329,7 +349,6 @@ const VoiceAssistant = () => {
                     setAssistantState('idle');
                 }
             };
-
             processVoiceInput();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
