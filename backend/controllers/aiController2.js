@@ -155,7 +155,7 @@ Your goal is to act as a secure, personalized, agriculture-only voice assistant.
                 ...history,
                 { role: 'user', content: finalMessage }
             ],
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-8b-instant',
             temperature: 0.65,
             max_tokens: 600,
         });

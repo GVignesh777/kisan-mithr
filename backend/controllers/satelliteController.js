@@ -87,7 +87,7 @@ Respond in **${targetLanguage}**. Use structured headers.
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama-3.3-70b-versatile",
+        model: "llama-3.1-8b-instant",
         messages: [
           { role: "system", content: "You are a professional satellite agronomy expert." },
           { role: "user", content: prompt }
