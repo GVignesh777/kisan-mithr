@@ -407,37 +407,7 @@ exports.transcribeAudio = async (req, res) => {
             return res.status(400).json({ error: 'No audio file provided' });
         }
 
-        const langCode = req.body.language || 'en-IN';
-        console.log(`STT Request: File=${req.file.originalname}, Lang=${langCode}`);
-
-        // Try Sarvam AI STT (user's temporary testing request)
-        if (process.env.SARVAM_API_KEY) {
-            try {
-                const formData = new FormData();
-                const fileBuffer = fs.readFileSync(req.file.path);
-                const fileBlob = new Blob([fileBuffer], { type: req.file.mimetype });
-                formData.append('file', fileBlob, req.file.originalname);
-                formData.append('language_code', langCode);
-                formData.append('model', 'saaras:v1');
-
-                console.log("Attempting Sarvam AI STT (Saaras v1)...");
-                const sarvamRes = await axios.post('https://api.sarvam.ai/speech-to-text', formData, {
-                    headers: {
-                        'api-subscription-key': process.env.SARVAM_API_KEY,
-                    }
-                });
-
-                if (sarvamRes.data && sarvamRes.data.transcript) {
-                    console.log("Sarvam STT Success:", sarvamRes.data.transcript);
-                    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-                    return res.json({ text: sarvamRes.data.transcript });
-                }
-            } catch (sarvamErr) {
-                console.warn("Sarvam STT Failed, falling back to Whisper:", sarvamErr.response?.data || sarvamErr.message);
-            }
-        }
-
-        // Fallback to Groq Whisper
+        // Use Groq Whisper for robust transcription
         const transcription = await groq.audio.transcriptions.create({
             file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
             model: "whisper-large-v3",
