@@ -407,20 +407,52 @@ exports.transcribeAudio = async (req, res) => {
             return res.status(400).json({ error: 'No audio file provided' });
         }
 
+        const langCode = req.body.language || 'en-IN';
+        console.log(`STT Request: File=${req.file.originalname}, Lang=${langCode}`);
+
+        // Try Sarvam AI STT (user's temporary testing request)
+        if (process.env.SARVAM_API_KEY) {
+            try {
+                const formData = new FormData();
+                // Use fs.createReadStream for the file
+                const fileStream = fs.createReadStream(req.file.path);
+                formData.append('file', fileStream, { filename: req.file.originalname });
+                formData.append('language_code', langCode);
+                formData.append('model', 'saara:v1');
+
+                console.log("Attempting Sarvam AI STT...");
+                const sarvamRes = await axios.post('https://api.sarvam.ai/speech-to-text', formData, {
+                    headers: {
+                        'api-subscription-key': process.env.SARVAM_API_KEY,
+                        // Axios will set the multipart boundary automatically for FormData
+                    }
+                });
+
+                if (sarvamRes.data && sarvamRes.data.transcript) {
+                    console.log("Sarvam STT Success:", sarvamRes.data.transcript);
+                    // Cleanup
+                    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+                    return res.json({ text: sarvamRes.data.transcript });
+                }
+            } catch (sarvamErr) {
+                console.warn("Sarvam STT Failed, falling back to Whisper:", sarvamErr.response?.data || sarvamErr.message);
+            }
+        }
+
+        // Fallback to Groq Whisper
         const transcription = await groq.audio.transcriptions.create({
             file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
             model: "whisper-large-v3",
-            prompt: "The user is an Indian farmer speaking in a mix of English, Telugu, and Hindi (Hinglish/Tenglish). Accurately capture the code-switching.",
-            language: req.body.language || undefined,
+            prompt: "The audio is a mix of English, Hindi, and Telugu (Hinglish/Tenglish). Please transcribe exactly what is said, maintaining the language switches.",
             response_format: "json"
         });
 
-        // Cleanup temporary file
-        fs.unlinkSync(req.file.path);
+        // Cleanup
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
         res.json({ text: transcription.text });
     } catch (error) {
-        console.error('Groq Transcription Error:', error);
+        console.error('Transcription Error:', error);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'Failed to transcribe audio' });
     }

@@ -318,7 +318,7 @@ const VoiceAssistant = () => {
                     
                     const formData = new FormData();
                     formData.append('audio', audioBlob, `recording.${audioExtRef.current}`);
-                    formData.append('language', language.split('-')[0]);
+                    formData.append('language', language); // Send full code like 'te-IN'
 
                     try {
                         console.log("Sending audio to Whisper...");
