@@ -389,7 +389,7 @@ exports.transcribeAudio = async (req, res) => {
         }
 
         const transcription = await groq.audio.transcriptions.create({
-            file: fs.createReadStream(req.file.path),
+            file: await Groq.toFile(fs.createReadStream(req.file.path), req.file.originalname),
             model: "whisper-large-v3",
             prompt: "The user is an Indian farmer speaking in a mix of English, Telugu, and Hindi (Hinglish/Tenglish). Accurately capture the code-switching.",
             response_format: "json"

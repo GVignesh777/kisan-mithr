@@ -5,6 +5,7 @@ import InputArea from './InputArea';
 import LanguageSelector from './LanguageSelector';
 import useLanguageStore from '../../store/useLanguageStore';
 import useUserStore from '../../store/useUserStore';
+import { toast } from 'react-toastify';
 
 const VoiceAssistant = () => {
   const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
@@ -32,6 +33,30 @@ const VoiceAssistant = () => {
   const recognitionRef = useRef(null);
   const synthRef = useRef(window.speechSynthesis);
   const audioRef = useRef(null);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // Whisper & Audio Recording Refs
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const isStartedRef = useRef(false);
+  const assistantStateRef = useRef(assistantState);
+
+  // Dynamic Microphone Format Detection for Cross-Platform Stability
+  const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return 'audio/webm';
+    if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+    if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+    return 'audio/wav';
+  };
+  const mimeTypeRef = useRef(getSupportedMimeType());
+  const audioExtRef = useRef(
+    mimeTypeRef.current.includes('mp4') ? 'mp4' : 
+    mimeTypeRef.current.includes('wav') ? 'wav' : 'webm'
+  );
+
+  useEffect(() => {
+    assistantStateRef.current = assistantState;
+  }, [assistantState]);
 
   const { user } = useUserStore();
   const userId = user?._id || user?.id;
@@ -60,12 +85,43 @@ const VoiceAssistant = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
-    // 1. Setup the Main Command Listener (used after clicking mic or waking up)
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = true;
+    // Safe Start/Stop helpers for SpeechRecognition
+    const safeStart = () => {
+        if (!recognitionRef.current || isStartedRef.current || !audioUnlocked) return;
+        
+        // On mobile, only start native STT if we are IDLE (waiting for wake-word)
+        if (isMobile && assistantStateRef.current === 'listening') return;
 
-    recognitionRef.current.onresult = (event) => {
+        try {
+            recognitionRef.current.start();
+        } catch (e) {
+            if (e.message?.includes('already started')) isStartedRef.current = true;
+        }
+    };
+
+    const safeStop = () => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {
+                if (e.message?.includes('not started')) isStartedRef.current = false;
+            }
+        }
+    };
+
+    // 1. Setup the Main Command Listener
+    const recognition = new SpeechRecognition();
+    recognition.continuous = !isMobile;
+    recognition.interimResults = true;
+    recognition.lang = language;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      console.log("Native STT STARTED. State:", assistantStateRef.current);
+      isStartedRef.current = true;
+    };
+
+    recognition.onresult = (event) => {
       let finalTrans = '';
       let interimTrans = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -75,16 +131,18 @@ const VoiceAssistant = () => {
       setTranscript(finalTrans || interimTrans);
     };
 
-    recognitionRef.current.onend = () => {
+    recognition.onend = () => {
+      isStartedRef.current = false;
+      const currentState = assistantStateRef.current;
+      
       setAssistantState((prev) => {
           if (prev === 'listening') return 'thinking';
-          // Immediately restart the wake word monitor if we drop out of active state
           if (prev === 'idle') startWakeWordListener();
           return prev;
       });
     };
     
-    recognitionRef.current.onerror = (e) => {
+    recognition.onerror = (e) => {
       if (e.error !== 'no-speech') console.error("Speech recognition error", e);
       setAssistantState('idle');
       startWakeWordListener();
@@ -97,41 +155,25 @@ const VoiceAssistant = () => {
     let wakeWordActive = true;
 
     wakeWordListener.onresult = (event) => {
-       // Only process if we are currently idle and looking for a wake word
        if (!wakeWordActive) return;
-       
        const currentResultStr = event.results[event.results.length - 1][0].transcript.toLowerCase();
-       
        if (currentResultStr.includes('hey kisan') || currentResultStr.includes('kisan')) {
-           console.log("Wake word detected:", currentResultStr);
-           wakeWordActive = false; // Pause the wake word listener
+           wakeWordActive = false;
            wakeWordListener.stop();
            
-           // Visual & Audio confirmation of wake
-           // Adding a soft catch in case of strict autoplay restrictions
            const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
            beep.volume = 0.2;
-           beep.play().catch(e => console.log('Autoplay restriction bypassed for wake word beep.'));
+           beep.play().catch(() => {});
            
-           // Switch directly into listening mode
            setInputMode('voice');
            setTranscript('');
            setAssistantState('listening');
-           
-           // Start the main high-fidelity command recognition engine
-           setTimeout(() => {
-               try { recognitionRef.current.start(); } catch(e){}
-           }, 300);
        }
     };
 
     wakeWordListener.onend = () => {
-        // Only restart if explicitly commanded to circumvent mic lockouts
         if (wakeWordActive) {
-            try { 
-                // Adding a slight delay to prevent strict browser rate-limiting on mic access
-                setTimeout(() => wakeWordListener.start(), 1000); 
-            } catch (e) {}
+            setTimeout(() => { try { wakeWordListener.start(); } catch(e){} }, 1000);
         }
     };
 
@@ -140,7 +182,6 @@ const VoiceAssistant = () => {
         try { wakeWordListener.start(); } catch (e) {}
     };
 
-    // Begin listening for wake word organically ONLY IF AUDIO IS UNLOCKED
     if (audioUnlocked) {
         startWakeWordListener();
     }
@@ -174,13 +215,88 @@ const VoiceAssistant = () => {
       if (recognitionRef.current) recognitionRef.current.lang = language;
   }, [language]);
 
-  // Handle Voice Search Execution Trigger
-  useEffect(() => {
-      if (assistantState === 'thinking' && transcript.trim() !== '') {
-          handleSendMessage(transcript.trim());
-          setTranscript(''); // Clear the temporary buffer
-      }
-  }, [assistantState]);
+    // State Machine Observer: Reacts to state changes with safe microphone transitions
+    useEffect(() => {
+        if (!audioUnlocked) return;
+
+        const currentState = assistantState;
+        console.log("State Machine transition to:", currentState);
+
+        if (currentState === 'idle') {
+            // Wake word listening (Native STT)
+            setTimeout(safeStart, 500);
+        } else if (currentState === 'listening') {
+            // Direct Mic Capture (Whisper Pipeline)
+            const startMicCapture = async () => {
+                audioChunksRef.current = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
+                    mediaRecorderRef.current.ondataavailable = (e) => {
+                        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+                    };
+                    mediaRecorderRef.current.start();
+                    console.log("Direct Mic Capture (MediaRecorder) active.");
+                } catch (err) {
+                    console.error("Direct Mic Capture failed:", err);
+                }
+            };
+            
+            startMicCapture();
+
+            // Native STT for real-time feedback (Desktop ONLY)
+            if (!isMobile) {
+                setTimeout(safeStart, 100); 
+            }
+        } else if (currentState === 'thinking' || currentState === 'speaking') {
+            // Kill everything to reset hardware and avoid resonance
+            safeStop();
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                try { mediaRecorderRef.current.stop(); } catch (e) {}
+            }
+        }
+    }, [assistantState, audioUnlocked, isMobile]);
+
+    // Handle Voice Search Execution Trigger
+    useEffect(() => {
+        if (assistantState === 'thinking') {
+            const processVoiceInput = async () => {
+                // Whisper Fallback (Primary for Mobile, Secondary/Mixed for Desktop)
+                if (audioChunksRef.current.length > 0) {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, `recording.${audioExtRef.current}`);
+
+                    try {
+                        console.log("Sending audio to Whisper for multi-mixed transcript...");
+                        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/transcript`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (data.text) {
+                            console.log("Whisper Transcript:", data.text);
+                            handleSendMessage(data.text);
+                            setTranscript('');
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("Whisper fallback failed:", err);
+                    }
+                }
+
+                // Native STT Fallback if Whisper fails or no audio recorded
+                if (transcript.trim() !== '') {
+                    handleSendMessage(transcript.trim());
+                    setTranscript('');
+                } else {
+                    setAssistantState('idle');
+                }
+            };
+
+            processVoiceInput();
+        }
+    }, [assistantState]);
 
   const handleNewChat = () => {
      const newChat = { id: Date.now().toString(), title: '', messages: [] };
