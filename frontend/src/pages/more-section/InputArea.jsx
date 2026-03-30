@@ -42,64 +42,66 @@ const InputArea = ({
   };
 
   return (
-    <div className="w-full relative z-20 mx-auto max-w-3xl">
+    <div className="w-full relative z-20 mx-auto max-w-3xl px-1 sm:px-0 animate-in fade-in slide-in-from-bottom-5 duration-700">
       
       {/* Waveform Visualizer for Audio Feedback */}
       {(isListening || isSpeaking) && (
-          <div className="absolute -top-16 left-1/2 -translate-x-1/2 pointer-events-none z-50">
+          <div className="absolute -top-14 sm:-top-16 left-1/2 -translate-x-1/2 pointer-events-none z-50">
               <WaveformVisualizer state={assistantState} />
           </div>
       )}
 
       {/* Mode Toggles */}
-      <div className="flex justify-center mb-6 space-x-3">
+      <div className="flex justify-center mb-4 sm:mb-6 space-x-2 sm:space-x-3">
         <button 
             onClick={() => setInputMode('text')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-all duration-300 border
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all duration-300 border active:scale-95 hover:scale-105
                 ${inputMode === 'text' 
-                    ? 'bg-green-500/20 text-green-400 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
-                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200'}`}
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200 hover:bg-white/10'}`}
         >
             <Keyboard size={14} />
-            <span>Type Mode</span>
+            <span className="hidden sm:inline">Type Mode</span>
+            <span className="sm:hidden text-[9px]">Type</span>
         </button>
         <button 
             onClick={() => setInputMode('voice')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-all duration-300 border
+            className={`flex items-center space-x-2 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all duration-300 border active:scale-95 hover:scale-105
                 ${inputMode === 'voice' 
-                    ? 'bg-sky-500/20 text-sky-400 border-sky-500/50 shadow-[0_0_15px_rgba(14,165,233,0.2)]' 
-                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200'}`}
+                    ? 'bg-sky-500/20 text-sky-400 border-sky-500/50 shadow-[0_0_20px_rgba(14,165,233,0.2)]' 
+                    : 'bg-white/5 text-zinc-500 border-white/5 hover:text-zinc-200 hover:bg-white/10'}`}
         >
             <Mic size={14} />
-            <span>Voice Mode</span>
+            <span className="hidden sm:inline">Voice Mode</span>
+            <span className="sm:hidden text-[9px]">Voice</span>
         </button>
       </div>
 
-      {/* Large Center Control Area */}
-      <div className="flex justify-center mb-6">
+      {/* Large Center Control Area (Reduced for mobile space) */}
+      <div className={`flex justify-center mb-4 sm:mb-6 items-center transition-all duration-500 ${isSpeaking || isListening ? 'h-16 sm:h-20' : 'h-14 sm:h-16'}`}>
           {isSpeaking ? (
               <button
                 onClick={handleStopSpeaking}
-                className="relative group flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-pulse shadow-lg outline-none cursor-pointer"
+                className="relative group flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 shadow-[0_0_40px_rgba(239,68,68,0.2)] animate-pulse shadow-lg outline-none cursor-pointer active:scale-90"
               >
-                <Square className="w-8 h-8 fill-current" />
+                <Square className="w-5 h-5 sm:w-8 sm:h-8 fill-current" />
               </button>
           ) : inputMode === 'voice' ? (
               <button
                 onClick={handleMicClick}
                 disabled={isThinking}
-                className={`relative group flex items-center justify-center w-20 h-20 rounded-full transition-all duration-700 shadow-2xl border-2 outline-none
+                className={`relative group flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-full transition-all duration-700 shadow-2xl border-2 outline-none active:scale-90
                   ${isListening 
-                    ? 'bg-sky-500 border-sky-400 scale-110 shadow-[0_0_50px_rgba(14,165,233,0.4)]' 
-                    : 'bg-green-900/20 backdrop-blur-xl border-white/20 hover:border-green-400/50 hover:bg-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
+                    ? 'bg-sky-500 border-sky-400 scale-105 sm:scale-110 shadow-[0_0_60px_rgba(14,165,233,0.5)]' 
+                    : 'bg-emerald-900/10 backdrop-blur-xl border-white/10 hover:border-emerald-400/50 hover:bg-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
                   }
-                  ${isThinking ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+                  ${isThinking ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
                 `}
               >
                 {isListening ? (
-                    <Mic className="text-white w-9 h-9 animate-pulse" />
+                    <Mic className="text-white w-6 h-6 sm:w-9 sm:h-9 animate-pulse" />
                 ) : (
-                    <Mic className="text-green-400 w-9 h-9 group-hover:scale-110 transition-transform duration-500" />
+                    <Mic className={`text-emerald-400 w-6 h-6 sm:w-9 sm:h-9 group-hover:scale-110 transition-transform duration-500 ${isThinking ? 'animate-spin' : ''}`} />
                 )}
                 
                 {/* Thinking Ripple */}
@@ -111,28 +113,28 @@ const InputArea = ({
       </div>
 
       {inputMode === 'text' && (
-         <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.3)] p-2 rounded-3xl flex items-end relative transition-all duration-500 focus-within:border-green-500/40 group">
+         <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.3)] p-1.5 sm:p-2 rounded-[24px] sm:rounded-3xl flex items-end relative transition-all duration-500 focus-within:border-emerald-500/40 group overflow-hidden">
             <textarea
                 ref={textareaRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Kisan Mithr anything..."
+                placeholder="Ask Kisan Mithr..."
                 disabled={isProcessing}
-                className="w-full bg-transparent text-white placeholder-zinc-500 px-4 py-3.5 outline-none resize-none [&::-webkit-scrollbar]:hidden text-[15px] sm:text-base leading-relaxed overflow-hidden"
+                className="w-full bg-transparent text-white placeholder-zinc-600 px-4 py-2.5 sm:py-3.5 outline-none resize-none [&::-webkit-scrollbar]:hidden text-sm sm:text-base leading-relaxed overflow-hidden"
                 rows={1}
             />
             <button
                 onClick={submitMessage}
                 disabled={!text.trim() || isProcessing}
-                className={`mb-1 mr-1 p-3 rounded-2xl flex items-center justify-center transition-all duration-300
+                className={`mb-1 mr-1 p-2 sm:p-3 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-90
                     ${text.trim() && !isProcessing
-                        ? 'bg-green-600 text-white hover:bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] cursor-pointer active:scale-90' 
-                        : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer' 
+                        : 'bg-white/5 text-zinc-700 cursor-not-allowed'
                     }
                 `}
             >
-                <SendHorizontal size={20} />
+                <SendHorizontal size={18} className="sm:size-5" />
             </button>
          </div>
       )}

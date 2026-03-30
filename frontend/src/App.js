@@ -11,58 +11,53 @@ import { ProtectedRoute, PublicRoute, RoleGuard } from "./Protected";
 import AdminProtectedRoute from "./routes/AdminProtectedRoute";
 import useLanguageStore from "./store/useLanguageStore";
 
-// Profile & Notifications
-import ProfilePage from "./pages/ProfileSettings/ProfilePage";
-import NotificationsPage from "./pages/ProfileSettings/NotificationsPage";
+// Lazy Loaded Pages for Performance Optimization
+const LandingPage = React.lazy(() => import("./pages/LandingPage"));
+const HomePage = React.lazy(() => import("./components/HomePage"));
+const VoiceAssistant = React.lazy(() => import("./pages/more-section/VoiceAssistant"));
+const Login = React.lazy(() => import("./pages/user-login/Login"));
+const ProfilePage = React.lazy(() => import("./pages/ProfileSettings/ProfilePage"));
+const NotificationsPage = React.lazy(() => import("./pages/ProfileSettings/NotificationsPage"));
+const ForgotPasswordHTML = React.lazy(() => import("./pages/user-login/ForgotPass"));
+const ResetPasswordHTML = React.lazy(() => import("./pages/user-login/ResetPass"));
+const AdminLogin = React.lazy(() => import("./pages/Admin/AdminLogin"));
+const OurTeamPage = React.lazy(() => import("./pages/OurTeamPage"));
+const ContactUsPage = React.lazy(() => import("./pages/ContactUsPage"));
+const TermsPage = React.lazy(() => import("./pages/TermsPage"));
+const WeatherDashboard = React.lazy(() => import("./pages2/Weather/WeatherDashboard"));
+const MarketPrices = React.lazy(() => import("./pages2/Market/MarketPrices"));
+const CropHealthMap = React.lazy(() => import("./pages2/CropHealth/CropHealthMap"));
+const PestDetector = React.lazy(() => import("./pages2/PestDetect/PestDetector"));
+const FarmProfileForm = React.lazy(() => import("./pages2/FarmProfile/FarmProfileForm"));
+const LivestockGuide = React.lazy(() => import("./pages2/Livestock/LivestockGuide"));
+const GovSchemes = React.lazy(() => import("./pages2/GovSchemes/GovSchemes"));
+const SatelliteHealthCockpit = React.lazy(() => import("./pages2/CropHealth/SatelliteHealthCockpit"));
+const Role = React.lazy(() => import("./components/Role"));
+const ErrorPage = React.lazy(() => import("./components/ErrorPage"));
 
-// Public Pages
-import Login from "./pages/user-login/Login";
-import ForgotPasswordHTML from "./pages/user-login/ForgotPass";
-import ResetPasswordHTML from "./pages/user-login/ResetPass";
-import AdminLogin from './pages/Admin/AdminLogin';
-import ErrorPage from "./components/ErrorPage";
-import OurTeamPage from "./pages/OurTeamPage";
-import ContactUsPage from "./pages/ContactUsPage";
-import TermsPage from "./pages/TermsPage";
+// Buyer Pages (Lazy)
+const BuyerLayout = React.lazy(() => import("./pages/Buyer/BuyerLayout"));
+const BuyerOverview = React.lazy(() => import("./pages/Buyer/tabs/BuyerOverview"));
+const BuyerMarketplace = React.lazy(() => import("./pages/Buyer/tabs/BuyerMarketplace"));
+const BuyerOrders = React.lazy(() => import("./pages/Buyer/tabs/BuyerOrders"));
+const BuyerInventory = React.lazy(() => import("./pages/Buyer/tabs/BuyerInventory"));
+const BuyerPayments = React.lazy(() => import("./pages/Buyer/tabs/BuyerPayments"));
+const BuyerProfile = React.lazy(() => import("./pages/Buyer/tabs/BuyerProfile"));
+const BuyerSettings = React.lazy(() => import("./pages/Buyer/tabs/BuyerSettings"));
 
-// Role Selection
-import Role from "./components/Role";
-
-// Farmer Pages
-import HomePage from "./components/HomePage";
-import VoiceAssistant from "./pages/more-section/VoiceAssistant";
-import WeatherDashboard from './pages2/Weather/WeatherDashboard';
-import MarketPrices from './pages2/Market/MarketPrices';
-import CropHealthMap from './pages2/CropHealth/CropHealthMap';
-import PestDetector from './pages2/PestDetect/PestDetector';
-import FarmProfileForm from './pages2/FarmProfile/FarmProfileForm';
-import LivestockGuide from './pages2/Livestock/LivestockGuide';
-import GovSchemes from './pages2/GovSchemes/GovSchemes';
-import SatelliteHealthCockpit from './pages2/CropHealth/SatelliteHealthCockpit';
-
-// Buyer Pages
-import BuyerLayout from './pages/Buyer/BuyerLayout';
-import BuyerOverview from './pages/Buyer/tabs/BuyerOverview';
-import BuyerMarketplace from './pages/Buyer/tabs/BuyerMarketplace';
-import BuyerOrders from './pages/Buyer/tabs/BuyerOrders';
-import BuyerInventory from './pages/Buyer/tabs/BuyerInventory';
-import BuyerPayments from './pages/Buyer/tabs/BuyerPayments';
-import BuyerProfile from './pages/Buyer/tabs/BuyerProfile';
-import BuyerSettings from './pages/Buyer/tabs/BuyerSettings';
-
-// Admin Pages
-import AdminLayout from './components/Admin/AdminLayout';
-import AdminDashboardPage from './pages/Admin/AdminDashboard';
-import AdminUsers from './pages/Admin/AdminUsers';
-import AdminConversations from './pages/Admin/AdminConversations';
-import AdminDiseaseReports from './pages/Admin/AdminDiseaseReports';
-import AdminImageModeration from './pages/Admin/AdminImageModeration';
-import AdminMarketPrices from './pages/Admin/AdminMarketPrices';
-import AdminFarmerMap from './pages/Admin/AdminFarmerMap';
-import AdminSystemHealth from './pages/Admin/AdminSystemHealth';
-import AdminNotifications from './pages/Admin/AdminNotifications';
-import AdminFeedback from './pages/Admin/AdminFeedback';
-import AdminAI from './pages/Admin/AdminAI';
+// Admin Pages (Lazy)
+const AdminLayout = React.lazy(() => import("./components/Admin/AdminLayout"));
+const AdminDashboardPage = React.lazy(() => import("./pages/Admin/AdminDashboard"));
+const AdminUsers = React.lazy(() => import("./pages/Admin/AdminUsers"));
+const AdminConversations = React.lazy(() => import("./pages/Admin/AdminConversations"));
+const AdminDiseaseReports = React.lazy(() => import("./pages/Admin/AdminDiseaseReports"));
+const AdminImageModeration = React.lazy(() => import("./pages/Admin/AdminImageModeration"));
+const AdminMarketPrices = React.lazy(() => import("./pages/Admin/AdminMarketPrices"));
+const AdminFarmerMap = React.lazy(() => import("./pages/Admin/AdminFarmerMap"));
+const AdminSystemHealth = React.lazy(() => import("./pages/Admin/AdminSystemHealth"));
+const AdminNotifications = React.lazy(() => import("./pages/Admin/AdminNotifications"));
+const AdminFeedback = React.lazy(() => import("./pages/Admin/AdminFeedback"));
+const AdminAI = React.lazy(() => import("./pages/Admin/AdminAI"));
 
 /* ─────────────────────────────────────────────
    Route Change Listener
@@ -133,36 +128,40 @@ const App = () => {
 
       <Router>
         <RouteChangeListener />
-        <Routes>
-          {/* 🔓 Public Routes (Accessible only when logged out) */}
-          <Route element={<PublicRoute />}>
-            <Route path="/user-login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPasswordHTML />} />
-            <Route path="/resetPassword/:token" element={<ResetPasswordHTML />} />
-          </Route>
+        <React.Suspense fallback={<PageTransitionLoader visible={true} phase="enter" />}>
+          <Routes>
+            {/* 🌍 Public Landing Page (SEO Targeted) */}
+            <Route path="/" element={<LandingPage />} />
 
-          {/* Admin login is always accessible — not gated by PublicRoute */}
-          <Route path="/admin-login" element={<AdminLogin />} />
-
-          {/* 🔒 Core Protected Routes (Must be Logged In) */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/role" element={<Role />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-
-            {/* 🚜 Farmer Specific Routes */}
-            <Route element={<RoleGuard allowedRoles={['farmer']} />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/assistant" element={<VoiceAssistant />} />
-              <Route path="/weather" element={<WeatherDashboard />} />
-              <Route path="/market" element={<MarketPrices />} />
-              <Route path="/crop-health" element={<CropHealthMap />} />
-              <Route path="/satellite-cockpit" element={<SatelliteHealthCockpit />} />
-              <Route path="/pest-detect" element={<PestDetector />} />
-              <Route path="/farm-profile" element={<FarmProfileForm />} />
-              <Route path="/livestock" element={<LivestockGuide />} />
-              <Route path="/schemes" element={<GovSchemes />} />
+            {/* 🔓 Public Auth Routes (Accessible only when logged out) */}
+            <Route element={<PublicRoute />}>
+              <Route path="/user-login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPasswordHTML />} />
+              <Route path="/resetPassword/:token" element={<ResetPasswordHTML />} />
             </Route>
+
+            {/* Admin login is always accessible — not gated by PublicRoute */}
+            <Route path="/admin-login" element={<AdminLogin />} />
+
+            {/* 🔒 Core Protected Routes (Must be Logged In) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/role" element={<Role />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+
+              {/* 🚜 Farmer Specific Routes */}
+              <Route element={<RoleGuard allowedRoles={['farmer']} />}>
+                <Route path="/dashboard" element={<HomePage />} />
+                <Route path="/assistant" element={<VoiceAssistant />} />
+                <Route path="/weather" element={<WeatherDashboard />} />
+                <Route path="/market" element={<MarketPrices />} />
+                <Route path="/crop-health" element={<CropHealthMap />} />
+                <Route path="/satellite-cockpit" element={<SatelliteHealthCockpit />} />
+                <Route path="/pest-detect" element={<PestDetector />} />
+                <Route path="/farm-profile" element={<FarmProfileForm />} />
+                <Route path="/livestock" element={<LivestockGuide />} />
+                <Route path="/schemes" element={<GovSchemes />} />
+              </Route>
 
             {/* 🛒 Buyer Specific Routes */}
             <Route element={<RoleGuard allowedRoles={['buyer']} />}>
@@ -208,7 +207,8 @@ const App = () => {
             path="*"
             element={<Navigate to="/error" state={{ error: "Error 404: Page not found" }} replace />}
           />
-        </Routes>
+          </Routes>
+        </React.Suspense>
       </Router>
     </div>
   );

@@ -866,13 +866,13 @@ const VoiceAssistant = () => {
             <div className="flex-1 flex flex-col h-full relative z-10">
                 
                 {/* Top Glass Header */}
-                <header className="absolute top-0 left-0 w-full px-4 sm:px-8 py-4 border-b border-white/[0.05] bg-black/40 backdrop-blur-2xl z-[60] flex items-center justify-between">
+                <header className="shrink-0 w-full px-4 sm:px-8 py-4 border-b border-white/[0.05] bg-black/40 backdrop-blur-2xl z-[60] flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
                             className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 lg:hidden text-zinc-100 transition-colors border border-white/10"
                         >
-                            <Menu className="w-5 h-5" />
+                            <Mic className="w-5 h-5" />
                         </button>
                         <h1 className="hidden lg:block text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase drop-shadow-md">
                             Kisan Mithr <span className="text-green-500">AI</span>
@@ -880,9 +880,9 @@ const VoiceAssistant = () => {
                     </div>
 
                     {/* Mobile Center Title */}
-                    <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none lg:hidden w-max">
-                        <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase">
-                            Kisan Mithr
+                    <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none lg:hidden w-max text-center">
+                        <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 tracking-widest uppercase leading-none">
+                            Kisan Mithr <span className="text-green-500">AI</span>
                         </h1>
                     </div>
 
@@ -897,13 +897,13 @@ const VoiceAssistant = () => {
                 </header>
 
                 {/* Centered Body */}
-                <div className="flex-1 flex flex-col w-full relative h-full pt-16">
-                    <div className="flex-1 w-full overflow-hidden flex flex-col justify-center">
+                <main className="flex-1 flex flex-col w-full relative min-h-0">
+                    <div className="flex-1 w-full overflow-hidden flex flex-col">
                         <ChatWindow messages={displayMessages} assistantState={assistantState} />
                     </div>
 
                     {/* Input Area (Upgraded Classic Style) */}
-                    <div className="w-full max-w-4xl mx-auto px-4 sm:px-8 pb-6 sm:pb-8 shrink-0 z-40">
+                    <div className="w-full max-w-5xl mx-auto px-4 sm:px-8 pb-4 sm:pb-6 shrink-0 z-40 bg-gradient-to-t from-zinc-950/80 to-transparent">
                         <InputArea
                             onSendMessage={handleSendMessage}
                             handleMicClick={handleMicClick}
@@ -912,11 +912,11 @@ const VoiceAssistant = () => {
                             inputMode={inputMode}
                             setInputMode={setInputMode}
                         />
-                        <div className="text-center mt-4 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] leading-none opacity-50">
+                        <div className="text-center mt-3 text-[9px] font-bold text-zinc-500 uppercase tracking-[0.3em] leading-none opacity-40">
                             Professional Agritech Intelligence &bull; AI Powered
                         </div>
                     </div>
-                </div>
+                </main>
             </div>
 
         </div>

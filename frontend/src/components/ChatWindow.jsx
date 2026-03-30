@@ -35,7 +35,7 @@ const ChatWindow = ({ messages, assistantState }) => {
   // Active chat view
   return (
     <div className="flex-1 flex flex-col w-full h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth relative z-10">
-      <div className="max-w-4xl w-full mx-auto p-4 md:px-8 py-10 space-y-6 md:space-y-8 flex-1">
+      <div className="max-w-5xl w-full mx-auto p-4 md:px-8 pt-6 pb-12 space-y-6 md:space-y-8 flex-1">
           {messages.map((msg, idx) => (
              <MessageBubble key={idx} message={msg} />
           ))}
