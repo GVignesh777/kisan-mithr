@@ -10,56 +10,58 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownFeature = ({ isMobile }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const features = [
     {
       icon: Leaf,
-      title: "Smart Crop Advisory",
-      desc: "AI-based crop suggestions & seasonal guidance",
+      title: t("dropdownFeature.smartCropAdvisory"),
+      desc: t("dropdownFeature.smartCropAdvisoryDesc"),
       path: "/crop-health",
     },
     {
       icon: TrendingUp,
-      title: "Market Price Updates",
-      desc: "Live mandi prices & price trend analysis",
+      title: t("dropdownFeature.marketPriceUpdates"),
+      desc: t("dropdownFeature.marketPriceUpdatesDesc"),
       path: "/market",
     },
     {
       icon: ShoppingCart,
-      title: "Direct Buyer Connection",
-      desc: "Sell directly without middlemen",
+      title: t("dropdownFeature.directBuyerConnection"),
+      desc: t("dropdownFeature.directBuyerConnectionDesc"),
       path: "/buyer/market",
     },
     {
       icon: Package,
-      title: "Order Management",
-      desc: "Manage orders, stock & delivery",
+      title: t("dropdownFeature.orderManagement"),
+      desc: t("dropdownFeature.orderManagementDesc"),
       path: "/buyer/orders",
     },
     {
       icon: Landmark,
-      title: "Govt Schemes",
-      desc: "Subsidy info & eligibility guidance",
+      title: t("dropdownFeature.govtSchemes"),
+      desc: t("dropdownFeature.govtSchemesDesc"),
       path: "/schemes",
     },
     {
       icon: Bot,
-      title: "Voice Assistant Support",
-      desc: "24/7 farming assistance",
+      title: t("dropdownFeature.voiceAssistantSupport"),
+      desc: t("dropdownFeature.voiceAssistantSupportDesc"),
       path: "/assistant",
     },
     {
       icon: ShieldCheck,
-      title: "Role-Based Access",
-      desc: "Farmer, Buyer & Admin dashboards",
+      title: t("dropdownFeature.roleBasedAccess"),
+      desc: t("dropdownFeature.roleBasedAccessDesc"),
       path: "/role",
     },
     {
       icon: Bot,
-      title: "NASA Health Cockpit",
-      desc: "Orbital environmental telemetry",
+      title: t("dropdownFeature.nasaHealthCockpit"),
+      desc: t("dropdownFeature.nasaHealthCockpitDesc"),
       path: "/satellite-cockpit",
     },
   ];
@@ -92,10 +94,10 @@ const DropdownFeature = ({ isMobile }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          Our Services <span className="text-green-500">🛠️</span>
+          {t("dropdownFeature.servicesHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          Powerful tools designed to enhance your farming experience
+          {t("dropdownFeature.servicesSub")}
         </p>
       </div>
 
@@ -128,4 +130,3 @@ const DropdownFeature = ({ isMobile }) => {
 };
 
 export default DropdownFeature;
-

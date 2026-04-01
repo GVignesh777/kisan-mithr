@@ -8,48 +8,50 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const homeItems = [
-  {
-    icon: LayoutDashboard,
-    title: "Platform Overview",
-    desc: "Explore how Kisan Mithr empowers farmers digitally",
-    path: "/",
-  },
-  {
-    icon: Leaf,
-    title: "Smart Farming",
-    desc: "AI-powered crop and soil guidance system",
-    path: "/assistant",
-  },
-  {
-    icon: TrendingUp,
-    title: "Live Market Trends",
-    desc: "Real-time mandi prices & crop demand insights",
-    path: "/market",
-  },
-  {
-    icon: BarChart3,
-    title: "Analytics & Growth",
-    desc: "Track farming performance & revenue growth",
-    path: "/buyer", // Redirect to buyer dashboard for analytics
-  },
-  {
-    icon: Users,
-    title: "Community Network",
-    desc: "Connect with farmers, buyers & experts",
-    path: "/",
-  },
-  {
-    icon: Bell,
-    title: "Latest Updates",
-    desc: "Stay informed with platform announcements",
-    path: "/",
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownHome = ({ isMobile }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const homeItems = [
+    {
+      icon: LayoutDashboard,
+      title: t("dropdownHome.platformOverview"),
+      desc: t("dropdownHome.platformOverviewDesc"),
+      path: "/",
+    },
+    {
+      icon: Leaf,
+      title: t("dropdownHome.smartFarming"),
+      desc: t("dropdownHome.smartFarmingDesc"),
+      path: "/assistant",
+    },
+    {
+      icon: TrendingUp,
+      title: t("dropdownHome.liveMarketTrends"),
+      desc: t("dropdownHome.liveMarketTrendsDesc"),
+      path: "/market",
+    },
+    {
+      icon: BarChart3,
+      title: t("dropdownHome.analyticsGrowth"),
+      desc: t("dropdownHome.analyticsGrowthDesc"),
+      path: "/buyer", // Redirect to buyer dashboard for analytics
+    },
+    {
+      icon: Users,
+      title: t("dropdownHome.communityNetwork"),
+      desc: t("dropdownHome.communityNetworkDesc"),
+      path: "/",
+    },
+    {
+      icon: Bell,
+      title: t("dropdownHome.latestUpdates"),
+      desc: t("dropdownHome.latestUpdatesDesc"),
+      path: "/",
+    },
+  ];
 
   if (isMobile) {
     return (
@@ -79,10 +81,10 @@ const DropdownHome = ({ isMobile }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          Welcome to Kisan Mithr <span className="text-green-500">🌾</span>
+          {t("dropdownHome.welcomeHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          A smart digital agriculture platform built for farmers
+          {t("dropdownHome.welcomeSub")}
         </p>
       </div>
 
@@ -117,4 +119,4 @@ const DropdownHome = ({ isMobile }) => {
   );
 };
 
-export default DropdownHome;
+export default DropdownHome;

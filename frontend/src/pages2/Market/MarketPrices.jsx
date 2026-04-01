@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, TrendingUp, TrendingDown, MapPin, Filter, ArrowUpToLine, ArrowDownToLine } from 'lucide-react';
+import { Search, TrendingUp, MapPin, ArrowUp, ArrowDown, ChevronDown, Filter, ArrowUpDown } from 'lucide-react';
 import useTranslation from '../../hooks/useTranslation';
 
 const MarketPrices = () => {
@@ -8,6 +8,7 @@ const MarketPrices = () => {
     const [selectedState, setSelectedState] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
     const [selectedMarket, setSelectedMarket] = useState('');
+    const [priceFilter, setPriceFilter] = useState('all');
     const tableRef = useRef(null);
 
     const [commodities, setCommodities] = useState([]);
@@ -48,9 +49,11 @@ const MarketPrices = () => {
         if (pA !== pB) return pA - pB;
         return a.localeCompare(b);
     });
+    
     const uniqueDistricts = [...new Set(
         commodities.filter(c => !selectedState || c.state === selectedState).map(c => c.district).filter(Boolean)
     )].sort();
+    
     const uniqueMarkets = [...new Set(
         commodities.filter(c => (!selectedState || c.state === selectedState) && (!selectedDistrict || c.district === selectedDistrict)).map(c => c.market).filter(Boolean)
     )].sort();
@@ -63,6 +66,10 @@ const MarketPrices = () => {
         const matchesMarket = !selectedMarket || c.market === selectedMarket;
         
         return matchesSearch && matchesState && matchesDistrict && matchesMarket;
+    }).sort((a, b) => {
+        if (priceFilter === 'high') return b.modal_price - a.modal_price;
+        if (priceFilter === 'low') return a.modal_price - b.modal_price;
+        return 0;
     });
 
     if (isLoading) {
@@ -70,139 +77,197 @@ const MarketPrices = () => {
             <div className="flex-1 p-8 text-white h-screen bg-zinc-950 flex flex-col items-center justify-center w-full">
                 <div className="w-16 h-16 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin mb-6 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]"></div>
                 <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-400 mb-2">
-                    {t("liveMarketPrices") || "Loading Live Prices"}
+                    {t("market.loadingLivePrices")}
                 </h2>
-                <p className="text-zinc-500 animate-pulse text-lg tracking-wide">{t("fetchingMandi") || "Fetching real-time mandi data..."}</p>
+                <p className="text-zinc-500 animate-pulse text-lg tracking-wide">{t("market.fetchingMandi")}</p>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 p-4 md:p-8 text-white h-screen bg-zinc-950 overflow-y-auto w-full">
-            <div className="max-w-6xl mx-auto space-y-6">
-                
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-green-400">{t("liveMarketPrices")}</h1>
-                        <p className="text-zinc-400 mt-1">{t("dailyMandi")}</p>
+        <div className="flex-1 p-4 md:p-8 text-white h-screen bg-zinc-950 overflow-y-auto w-full font-sans relative">
+            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+                {/* Header Section */}
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                            <span className="text-emerald-400 text-xs font-bold tracking-[0.2em] uppercase">
+                                {t("market.liveMarketPrices")}
+                            </span>
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
+                            {t("liveMarketPrices")}
+                        </h1>
+                        <p className="text-zinc-400 text-lg font-medium max-w-2xl leading-relaxed">
+                            {t("dailyMandi")}
+                        </p>
                     </div>
-                </div>
+                </header>
 
-                {/* Filters Row */}
-                <div className="flex flex-col md:flex-row gap-4 flex-wrap">
-                    <div className="relative flex-1 min-w-[200px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder={t("searchPlaceholder")}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-700/50 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
-                        />
-                    </div>
-                    
-                    <select 
-                        value={selectedState} 
-                        onChange={(e) => { setSelectedState(e.target.value); setSelectedDistrict(''); setSelectedMarket(''); }}
-                        className="px-4 py-3 bg-zinc-900 border border-zinc-700/50 rounded-lg text-zinc-300 focus:outline-none focus:border-green-500 transition-colors"
-                    >
-                        <option value="">All States</option>
-                        {uniqueStates.map(state => <option key={state} value={state}>{state}</option>)}
-                    </select>
+                {/* Filters and Search */}
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div className="md:col-span-6 relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t("searchPlaceholder")}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all text-white placeholder:text-gray-500 font-medium"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
 
-                    <select 
-                        value={selectedDistrict} 
-                        onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedMarket(''); }}
-                        disabled={!selectedState}
-                        className="px-4 py-3 bg-zinc-900 border border-zinc-700/50 rounded-lg text-zinc-300 focus:outline-none focus:border-green-500 transition-colors disabled:opacity-50"
-                    >
-                        <option value="">All Districts</option>
-                        {uniqueDistricts.map(district => <option key={district} value={district}>{district}</option>)}
-                    </select>
-
-                    <select 
-                        value={selectedMarket} 
-                        onChange={(e) => setSelectedMarket(e.target.value)}
-                        disabled={!selectedDistrict}
-                        className="px-4 py-3 bg-zinc-900 border border-zinc-700/50 rounded-lg text-zinc-300 focus:outline-none focus:border-green-500 transition-colors disabled:opacity-50"
-                    >
-                        <option value="">All Mandis / Markets</option>
-                        {uniqueMarkets.map(market => <option key={market} value={market}>{market}</option>)}
-                    </select>
-                </div>
-
-                {/* Data Table */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden mt-6 shadow-xl relative">
-                    <div className="overflow-x-auto overflow-y-auto max-h-[65vh] custom-scrollbar" ref={tableRef}>
-                        <table className="w-full text-left border-collapse relative">
-                            <thead className="sticky top-0 z-10">
-                                <tr className="bg-zinc-800/95 backdrop-blur-sm text-zinc-400 text-sm uppercase tracking-wider shadow-sm">
-                                    <th className="p-4 font-medium">{t("commodity")}</th>
-                                    <th className="p-4 font-medium">{t("market")}</th>
-                                    <th className="p-4 font-medium">{t("minPrice")}</th>
-                                    <th className="p-4 font-medium">{t("maxPrice")}</th>
-                                    <th className="p-4 font-medium">{t("modalPrice")}</th>
-                                    <th className="p-4 font-medium">{t("date")}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-800/50">
-                                {filteredData.map((item) => (
-                                    <tr key={item._id} className="hover:bg-white/5 transition-colors">
-                                        <td className="p-4">
-                                            <div className="font-semibold text-zinc-100">{item.commodity}</div>
-                                            <div className="text-sm text-zinc-500">{item.variety || 'Standard'}</div>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1.5 text-zinc-300">
-                                                <MapPin size={14} className="text-zinc-500" />
-                                                {item.market}, {item.state}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-zinc-400">₹{item.min_price}</td>
-                                        <td className="p-4 text-zinc-400">₹{item.max_price}</td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-2 font-bold text-lg">
-                                                <span>₹{item.modal_price}</span>
-                                                <TrendingUp size={16} className="text-green-500" /> 
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-sm text-zinc-400">
-                                            {item.arrival_date}
-                                        </td>
-                                    </tr>
+                        <div className="md:col-span-3 relative">
+                            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <select
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none appearance-none text-white font-medium cursor-pointer transition-all hover:bg-white/10"
+                                value={selectedState}
+                                onChange={(e) => {
+                                    setSelectedState(e.target.value);
+                                    setSelectedDistrict("");
+                                    setSelectedMarket("");
+                                }}
+                            >
+                                <option value="" className="bg-gray-900">{t("market.allStates")}</option>
+                                {uniqueStates.map(state => (
+                                    <option key={state} value={state} className="bg-gray-900">{state}</option>
                                 ))}
-                            </tbody>
-                        </table>
-                        
-                        {filteredData.length === 0 && (
-                            <div className="p-8 text-center text-zinc-500">
-                                {t("noMarketData")} "{searchQuery}"
-                            </div>
-                        )}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
+
+                        <div className="md:col-span-3 relative">
+                            <ArrowUpDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                            <select
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none appearance-none text-white font-medium cursor-pointer transition-all hover:bg-white/10"
+                                value={priceFilter}
+                                onChange={(e) => setPriceFilter(e.target.value)}
+                            >
+                                <option value="all" className="bg-gray-900">{t("market.standard")}</option>
+                                <option value="high" className="bg-gray-900">Highest Price</option>
+                                <option value="low" className="bg-gray-900">Lowest Price</option>
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
                     </div>
-                    
-                    {/* Scroll Controls */}
-                    <div className="absolute right-6 bottom-6 flex flex-col gap-3 z-20">
-                        <button 
-                            onClick={() => tableRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} 
-                            className="p-2.5 bg-zinc-800/90 hover:bg-emerald-600 rounded-full text-zinc-300 hover:text-white shadow-xl border border-zinc-700/50 transition-all"
-                            title="Scroll to Top"
-                        >
-                            <ArrowUpToLine size={20} />
-                        </button>
-                        <button 
-                            onClick={() => tableRef.current?.scrollTo({ top: tableRef.current.scrollHeight, behavior: 'smooth' })} 
-                            className="p-2.5 bg-zinc-800/90 hover:bg-emerald-600 rounded-full text-zinc-300 hover:text-white shadow-xl border border-zinc-700/50 transition-all"
-                            title="Scroll to Bottom"
-                        >
-                            <ArrowDownToLine size={20} />
-                        </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                        <div className="relative">
+                            <select
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 focus:outline-none appearance-none text-gray-300 text-sm cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                value={selectedDistrict}
+                                onChange={(e) => {
+                                    setSelectedDistrict(e.target.value);
+                                    setSelectedMarket("");
+                                }}
+                                disabled={!selectedState}
+                            >
+                                <option value="" className="bg-gray-900">{t("market.allDistricts")}</option>
+                                {uniqueDistricts.map(dist => (
+                                    <option key={dist} value={dist} className="bg-gray-900">{dist}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 focus:outline-none appearance-none text-gray-300 text-sm cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                value={selectedMarket}
+                                onChange={(e) => setSelectedMarket(e.target.value)}
+                                disabled={!selectedDistrict}
+                            >
+                                <option value="" className="bg-gray-900">{t("market.allMandis")}</option>
+                                {uniqueMarkets.map(mandi => (
+                                    <option key={mandi} value={mandi} className="bg-gray-900">{mandi}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                        </div>
                     </div>
                 </div>
 
+            {/* Data Table */}
+            <div className="overflow-hidden border border-white/10 rounded-3xl bg-[#0a0a0c]/40 backdrop-blur-md shadow-2xl relative">
+                <div className="overflow-x-auto max-h-[60vh] custom-scrollbar" ref={tableRef}>
+                    <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 bg-zinc-900/95 backdrop-blur-md z-10">
+                            <tr className="border-b border-white/10">
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest">{t("commodity")}</th>
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest">{t("marketLabel")}</th>
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">{t("minPrice")}</th>
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">{t("maxPrice")}</th>
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">{t("modalPrice")}</th>
+                                <th className="p-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">{t("date")}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {filteredData.map((item, index) => (
+                                <tr key={index} className="hover:bg-white/[0.03] transition-colors group">
+                                    <td className="p-5">
+                                        <div className="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{item.commodity}</div>
+                                        <div className="text-[10px] text-gray-500 font-bold uppercase mt-1 opacity-60">Variety: {item.variety || t("market.standard")}</div>
+                                    </td>
+                                    <td className="p-5">
+                                        <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-300">
+                                            <MapPin size={14} className="text-zinc-500" />
+                                            {item.market}
+                                        </div>
+                                        <div className="text-[10px] text-gray-500 font-bold uppercase mt-0.5">{item.state}, {item.district}</div>
+                                    </td>
+                                    <td className="p-5 text-right font-mono text-gray-400 italic">₹{item.min_price}</td>
+                                    <td className="p-5 text-right font-mono text-gray-400 italic">₹{item.max_price}</td>
+                                    <td className="p-5 text-right font-mono text-emerald-400 font-bold text-lg">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <span>₹{item.modal_price}</span>
+                                            <TrendingUp size={16} className="text-emerald-500 opacity-50" />
+                                        </div>
+                                    </td>
+                                    <td className="p-5 text-center">
+                                        <span className="px-3 py-1 rounded-full bg-white/5 text-[11px] font-bold text-gray-400 border border-white/5">
+                                            {item.arrival_date}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {filteredData.length === 0 && (
+                    <div className="p-20 text-center space-y-4">
+                        <div className="bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Search className="w-8 h-8 text-gray-600" />
+                        </div>
+                        <p className="text-gray-400 font-medium">
+                            {t("noMarketData")} <span className="text-emerald-400">"{searchQuery || "selected area"}"</span>
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
-    );
+
+        {/* Floating Scroll Controls */}
+        <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-50">
+            <button
+                onClick={() => tableRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="p-3 bg-zinc-900/90 hover:bg-emerald-500/20 border border-white/10 rounded-2xl backdrop-blur-md transition-all group shadow-xl"
+                title={t("market.scrollToTop")}
+            >
+                <ArrowUp className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+            </button>
+            <button
+                onClick={() => tableRef.current?.scrollTo({ top: tableRef.current?.scrollHeight, behavior: 'smooth' })}
+                className="p-3 bg-zinc-900/90 hover:bg-emerald-500/20 border border-white/10 rounded-2xl backdrop-blur-md transition-all group shadow-xl"
+                title={t("market.scrollToBottom")}
+            >
+                <ArrowDown className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+            </button>
+        </div>
+    </div>
+);
 };
 
 export default MarketPrices;

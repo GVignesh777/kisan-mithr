@@ -3,6 +3,7 @@ import Header from "../components/header/Header";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
 import { FileText, ShieldCheck, Scale, AlertTriangle, HelpCircle, Mail, CheckCircle } from "lucide-react";
+import useTranslation from "../hooks/useTranslation";
 
 /**
  * TermsPage
@@ -12,6 +13,7 @@ import { FileText, ShieldCheck, Scale, AlertTriangle, HelpCircle, Mail, CheckCir
  * Redesigned with a premium dark theme.
  */
 const TermsPage = () => {
+  const { t } = useTranslation();
   
   // Scroll to top on mount
   useEffect(() => {
@@ -24,74 +26,74 @@ const TermsPage = () => {
     {
       id: "acceptance",
       icon: <CheckCircle className="text-green-400" size={24} />,
-      title: "1. Acceptance of Terms",
-      content: `By accessing or using the Kisan Mithr platform ("the Platform"), you agree to be bound by these Terms and Conditions and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site. The materials contained in this Platform are protected by applicable copyright and trademark law.`
+      title: t("termsPage.sec1Title") || "1. Acceptance of Terms",
+      content: t("termsPage.sec1Content") || `By accessing or using the Kisan Mithr platform ("the Platform"), you agree to be bound by these Terms and Conditions and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site. The materials contained in this Platform are protected by applicable copyright and trademark law.`
     },
     {
       id: "description",
       icon: <FileText className="text-green-400" size={24} />,
-      title: "2. Description of Platform",
-      content: `Kisan Mithr is a digital support ecosystem designed to empower farmers and agricultural stakeholders. We provide information, market data, assistant tools, and a communication bridge between farmers and buyers. The Platform is provided for informational and logistical support purposes only.`
+      title: t("termsPage.sec2Title") || "2. Description of Platform",
+      content: t("termsPage.sec2Content") || `Kisan Mithr is a digital support ecosystem designed to empower farmers and agricultural stakeholders. We provide information, market data, assistant tools, and a communication bridge between farmers and buyers. The Platform is provided for informational and logistical support purposes only.`
     },
     {
       id: "responsibilities",
       icon: <ShieldCheck className="text-green-400" size={24} />,
-      title: "3. User Responsibilities",
-      content: `As a user of Kisan Mithr, you are responsible for maintaining the confidentiality of your account information. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate and complete.`
+      title: t("termsPage.sec3Title") || "3. User Responsibilities",
+      content: t("termsPage.sec3Content") || `As a user of Kisan Mithr, you are responsible for maintaining the confidentiality of your account information. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate and complete.`
     },
     {
       id: "use-policy",
       icon: <AlertTriangle className="text-green-400" size={24} />,
-      title: "4. Acceptable Use Policy",
-      content: `You agree not to use the Platform for any unlawful purpose or any purpose prohibited under this clause. You agree not to use the Platform in any way that could damage the Platform or general business of Kisan Mithr. You are prohibited from posting or transmitting any harmful, threatening, or discriminatory content.`
+      title: t("termsPage.sec4Title") || "4. Acceptable Use Policy",
+      content: t("termsPage.sec4Content") || `You agree not to use the Platform for any unlawful purpose or any purpose prohibited under this clause. You agree not to use the Platform in any way that could damage the Platform or general business of Kisan Mithr. You are prohibited from posting or transmitting any harmful, threatening, or discriminatory content.`
     },
     {
       id: "ip-rights",
       icon: <Scale className="text-green-400" size={24} />,
-      title: "5. Intellectual Property Rights",
-      content: `The Platform and its original content, features, and functionality are owned by Kisan Mithr and are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.`
+      title: t("termsPage.sec5Title") || "5. Intellectual Property Rights",
+      content: t("termsPage.sec5Content") || `The Platform and its original content, features, and functionality are owned by Kisan Mithr and are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.`
     },
     {
       id: "availability",
       icon: <HelpCircle className="text-green-400" size={24} />,
-      title: "6. Service Availability Disclaimer",
-      content: `While we strive for 24/7 uptime, Kisan Mithr does not guarantee that the Platform will be available at all times. We reserve the right to modify, suspend, or discontinue any part of the service with or without notice for maintenance or updates.`
+      title: t("termsPage.sec6Title") || "6. Service Availability Disclaimer",
+      content: t("termsPage.sec6Content") || `While we strive for 24/7 uptime, Kisan Mithr does not guarantee that the Platform will be available at all times. We reserve the right to modify, suspend, or discontinue any part of the service with or without notice for maintenance or updates.`
     },
     {
       id: "liability",
       icon: <AlertTriangle className="text-red-400" size={24} />,
-      title: "7. Limitation of Liability",
-      content: `<b className="text-white">Kisan Mithr shall not be held liable for any financial losses, crop failures, or decisions made by users based on the information provided on the Platform.</b> Agricultural outcomes depend on numerous external factors beyond our control (weather, soil quality, etc.). User discretion is advised.`
+      title: t("termsPage.sec7Title") || "7. Limitation of Liability",
+      content: t("termsPage.sec7Content") || `<b className="text-white">Kisan Mithr shall not be held liable for any financial losses, crop failures, or decisions made by users based on the information provided on the Platform.</b> Agricultural outcomes depend on numerous external factors beyond our control (weather, soil quality, etc.). User discretion is advised.`
     },
     {
       id: "third-party",
       icon: <FileText className="text-green-400" size={24} />,
-      title: "8. Third-Party Services",
-      content: `The Platform integrates third-party services including but not limited to EmailJS, Google Maps, and NASA APIs. Your use of these features is also governed by the respective service providers' terms and privacy policies.`
+      title: t("termsPage.sec8Title") || "8. Third-Party Services",
+      content: t("termsPage.sec8Content") || `The Platform integrates third-party services including but not limited to EmailJS, Google Maps, and NASA APIs. Your use of these features is also governed by the respective service providers' terms and privacy policies.`
     },
     {
       id: "privacy",
       icon: <ShieldCheck className="text-green-400" size={24} />,
-      title: "9. Privacy Reference",
-      content: `Your privacy is important to us. Our Privacy Policy, which is incorporated into these Terms by reference, explains how we collect, use, and protect your personal information.`
+      title: t("termsPage.sec9Title") || "9. Privacy Reference",
+      content: t("termsPage.sec9Content") || `Your privacy is important to us. Our Privacy Policy, which is incorporated into these Terms by reference, explains how we collect, use, and protect your personal information.`
     },
     {
       id: "modifications",
       icon: <FileText className="text-green-400" size={24} />,
-      title: "10. Modification of Terms",
-      content: `Kisan Mithr reserves the right to revise these terms of service at any time without notice. By using this platform, you are agreeing to be bound by the then-current version of these Terms and Conditions.`
+      title: t("termsPage.sec10Title") || "10. Modification of Terms",
+      content: t("termsPage.sec10Content") || `Kisan Mithr reserves the right to revise these terms of service at any time without notice. By using this platform, you are agreeing to be bound by the then-current version of these Terms and Conditions.`
     },
     {
       id: "termination",
       icon: <AlertTriangle className="text-red-400" size={24} />,
-      title: "11. Termination of Access",
-      content: `We may terminate or suspend your access to the Platform immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.`
+      title: t("termsPage.sec11Title") || "11. Termination of Access",
+      content: t("termsPage.sec11Content") || `We may terminate or suspend your access to the Platform immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.`
     },
     {
       id: "law",
       icon: <Scale className="text-green-400" size={24} />,
-      title: "12. Governing Law",
-      content: `These terms and conditions are governed by and construed in accordance with the laws of <b className="text-white">India</b> and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.`
+      title: t("termsPage.sec12Title") || "12. Governing Law",
+      content: t("termsPage.sec12Content") || `These terms and conditions are governed by and construed in accordance with the laws of <b className="text-white">India</b> and you irrevocably submit to the exclusive jurisdiction of the courts in that State or location.`
     }
   ];
 
@@ -116,10 +118,10 @@ const TermsPage = () => {
             <FileText size={40} />
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-6">
-            Terms & <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">Conditions</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">{t("termsPage.termsHeading") || "Terms & Conditions"}</span>
           </h1>
           <p className="text-zinc-400 font-medium text-lg">
-            Last Updated: <span className="text-green-400 font-bold tracking-wider">{lastUpdated}</span>
+            {t("termsPage.lastUpdated") || "Last Updated:"} <span className="text-green-400 font-bold tracking-wider">{lastUpdated}</span>
           </p>
           <div className="w-24 h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 mx-auto mt-10 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)]"></div>
         </motion.div>
@@ -160,8 +162,8 @@ const TermsPage = () => {
           
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="text-center md:text-left">
-              <h3 className="text-3xl font-extrabold mb-3 tracking-tight">Need further clarification?</h3>
-              <p className="text-zinc-400 text-lg max-w-md">Our legal team is committed to ensuring full transparency for all our farmers and partners.</p>
+              <h3 className="text-3xl font-extrabold mb-3 tracking-tight">{t("termsPage.clarificationHeading") || "Need further clarification?"}</h3>
+              <p className="text-zinc-400 text-lg max-w-md">{t("termsPage.clarificationDesc") || "Our legal team is committed to ensuring full transparency for all our farmers and partners."}</p>
             </div>
             
             <a 
@@ -169,7 +171,7 @@ const TermsPage = () => {
               className="group/btn flex items-center gap-4 px-10 py-5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-lg rounded-2xl transition-all shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_15px_40px_-10px_rgba(16,185,129,0.6)] hover:-translate-y-1"
             >
               <Mail size={24} className="group-hover/btn:scale-110 transition-transform" />
-              Email Us
+              {t("termsPage.emailUs") || "Email Us"}
             </a>
           </div>
         </motion.div>

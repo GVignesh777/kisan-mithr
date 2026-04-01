@@ -5,10 +5,32 @@ import InputArea from './InputArea';
 import VoiceCharacterSelector from './VoiceCharacterSelector';
 import { Menu, Mic, Sparkles } from 'lucide-react';
 import useUserStore from '../../store/useUserStore';
+import useLanguageStore from '../../store/useLanguageStore';
+import useTranslation from '../../hooks/useTranslation';
 
 const VoiceAssistant = () => {
+    const { t } = useTranslation();
+    const { language: globalLanguage, setLanguage: setGlobalLanguage } = useLanguageStore();
+    
+    // Map global 2-letter codes to assistant 5-letter codes
+    const langMap = { 'en': 'en-IN', 'hi': 'hi-IN', 'te': 'te-IN' };
+    const revLangMap = { 'en-IN': 'en', 'hi-IN': 'hi', 'te-IN': 'te' };
+    
     const [assistantState, setAssistantState] = useState('idle'); // idle, listening, thinking, speaking
-    const [language, setLanguage] = useState('en-IN');
+    const [language, setLanguageState] = useState(langMap[globalLanguage] || 'en-IN');
+    
+    // Sync local state if global changes
+    useEffect(() => {
+        setLanguageState(langMap[globalLanguage] || 'en-IN');
+    }, [globalLanguage]);
+
+    // Updater that also hits the global store
+    const setLanguage = (newLang) => {
+        setLanguageState(newLang);
+        const shortLang = revLangMap[newLang];
+        if (shortLang) setGlobalLanguage(shortLang);
+    };
+
     const [selectedVoice, setSelectedVoice] = useState('George');
     const [inputMode, setInputMode] = useState('voice'); // 'voice' or 'text'
     const [transcript, setTranscript] = useState('');
@@ -814,10 +836,10 @@ const VoiceAssistant = () => {
 
     // Gemini-style status mapping
     const stateLabels = {
-        idle: 'Hey Kisan',
-        listening: 'Listening...',
-        thinking: 'Understanding...',
-        speaking: 'Speaking...'
+        idle: t("assistant.heyKisan") || 'Hey Kisan',
+        listening: t("assistant.listening") || 'Listening...',
+        thinking: t("assistant.thinking") || 'Understanding...',
+        speaking: t("assistant.speaking") || 'Speaking...'
     };
 
     // Combine historical messages with the live voice transcript bubble (if active)
@@ -842,9 +864,9 @@ const VoiceAssistant = () => {
                             <Mic className="w-10 h-10 text-green-400" />
                         </div>
                         <h2 className="text-3xl font-black text-white mb-3 tracking-widest uppercase">Kisan Mithr AI</h2>
-                        <p className="text-zinc-400 font-medium leading-relaxed mb-8">Empowering Indian Farmers with Intelligent Voice Assistance.</p>
+                        <p className="text-zinc-400 font-medium leading-relaxed mb-8">{t("assistant.empowering")}</p>
                         <div className="px-8 py-3.5 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 uppercase tracking-widest text-sm">
-                            Tap to Begin
+                            {t("assistant.tapToBegin")}
                         </div>
                     </div>
                 </div>
@@ -913,7 +935,7 @@ const VoiceAssistant = () => {
                             setInputMode={setInputMode}
                         />
                         <div className="text-center mt-3 text-[9px] font-bold text-zinc-500 uppercase tracking-[0.3em] leading-none opacity-40">
-                            Professional Agritech Intelligence &bull; AI Powered
+                            {t("assistant.aiPowered")}
                         </div>
                     </div>
                 </main>

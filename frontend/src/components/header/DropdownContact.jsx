@@ -8,48 +8,50 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const contactItems = [
-  {
-    icon: Phone,
-    title: "Farmer Support",
-    desc: "24/7 assistance for crop & platform queries",
-    path: "/contact",
-  },
-  {
-    icon: MessageCircle,
-    title: "Help Center",
-    desc: "Browse FAQs and user guides",
-    path: "/contact",
-  },
-  {
-    icon: Mail,
-    title: "Send Feedback",
-    desc: "Share suggestions to improve the platform",
-    path: "/contact",
-  },
-  {
-    icon: Handshake,
-    title: "Partnerships",
-    desc: "Collaborate with Kisan Mithr",
-    path: "/contact",
-  },
-  {
-    icon: MapPin,
-    title: "Our Location",
-    desc: "Visit our regional support offices",
-    path: "/contact",
-  },
-  {
-    icon: LifeBuoy,
-    title: "Technical Support",
-    desc: "Resolve account or system issues",
-    path: "/contact",
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownContact = ({ isMobile, onClose }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const contactItems = [
+    {
+      icon: Phone,
+      title: t("dropdownContact.farmerSupport"),
+      desc: t("dropdownContact.farmerSupportDesc"),
+      path: "/contact",
+    },
+    {
+      icon: MessageCircle,
+      title: t("dropdownContact.helpCenter"),
+      desc: t("dropdownContact.helpCenterDesc"),
+      path: "/contact",
+    },
+    {
+      icon: Mail,
+      title: t("dropdownContact.sendFeedback"),
+      desc: t("dropdownContact.sendFeedbackDesc"),
+      path: "/contact",
+    },
+    {
+      icon: Handshake,
+      title: t("dropdownContact.partnerships"),
+      desc: t("dropdownContact.partnershipsDesc"),
+      path: "/contact",
+    },
+    {
+      icon: MapPin,
+      title: t("dropdownContact.ourLocation"),
+      desc: t("dropdownContact.ourLocationDesc"),
+      path: "/contact",
+    },
+    {
+      icon: LifeBuoy,
+      title: t("dropdownContact.technicalSupport"),
+      desc: t("dropdownContact.technicalSupportDesc"),
+      path: "/contact",
+    },
+  ];
 
   if (isMobile) {
     return (
@@ -82,10 +84,10 @@ const DropdownContact = ({ isMobile, onClose }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          Contact & Support <span className="text-green-500">📞</span>
+          {t("dropdownContact.contactHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          We're here to help farmers and buyers anytime
+          {t("dropdownContact.contactSub")}
         </p>
       </div>
 
@@ -120,4 +122,4 @@ const DropdownContact = ({ isMobile, onClose }) => {
   );
 };
 
-export default DropdownContact;
+export default DropdownContact;

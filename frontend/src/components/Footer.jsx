@@ -25,11 +25,11 @@ const Footer = () => {
   ];
 
   const quickLinks = [
-    { name: "navigationHome", path: "/" },
-    { name: "Farmer Dashboard", path: "/" }, // Assuming landing has a way to navigate/role select
-    { name: "Buyer Dashboard", path: "/buyer-dashboard" },
-    { name: "Admin Panel", path: "/admin-login" },
-    { name: "Contact Us", path: "/contact" },
+    { name: t("navigationHome"), path: "/" },
+    { name: t("footer.farmerDashboard"), path: "/" }, 
+    { name: t("footer.buyerDashboard"), path: "/buyer-dashboard" },
+    { name: t("footer.adminPanel"), path: "/admin-login" },
+    { name: t("footer.contactUs"), path: "/contact" },
   ];
 
   return (
@@ -54,28 +54,13 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-zinc-400 leading-relaxed max-w-sm">
-              Kisan Mithr connects farmers and buyers directly, ensuring fair prices and transparency in the agricultural marketplace.
+              {t("footer.description")}
             </p>
-            
-            {/* Newsletter Section */}
-            {/* <div className="space-y-4 pt-4">
-              <h4 className="text-white font-semibold text-sm uppercase tracking-widest">{t("newsletterTitle") || "Newsletter"}</h4>
-              <div className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="name@email.com" 
-                  className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-4 py-2 text-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 transition-all w-full"
-                />
-                <button className="p-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-colors group">
-                  <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </button>
-              </div>
-            </div> */}
           </div>
 
           {/* Quick Links */}
           <div className="space-y-6">
-            <h3 className="text-white font-bold text-lg">{t("quickLinks") || "Quick Links"}</h3>
+            <h3 className="text-white font-bold text-lg">{t("footer.quickLinks")}</h3>
             <ul className="space-y-4">
               {quickLinks.map((link, idx) => (
                 <li key={idx}>
@@ -84,7 +69,7 @@ const Footer = () => {
                     className="text-zinc-400 hover:text-green-400 transition-colors text-base flex items-center gap-2 group"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-green-500 transition-colors"></span>
-                    {t(link.name) || link.name}
+                    {link.name}
                   </button>
                 </li>
               ))}
@@ -93,14 +78,14 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div className="space-y-6">
-            <h3 className="text-white font-bold text-lg">{t("contactUs") || "Contact Us"}</h3>
+            <h3 className="text-white font-bold text-lg">{t("footer.contactUs")}</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-4 group">
                 <div className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 group-hover:text-green-400 group-hover:border-green-500/30 transition-all">
                   <Mail size={18} />
                 </div>
                 <div>
-                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Email</p>
+                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">{t("footer.email")}</p>
                   <a href="mailto:support@kisanmithr.com" className="text-zinc-300 hover:text-white transition-colors">support@kisanmithr.com</a>
                 </div>
               </li>
@@ -109,8 +94,8 @@ const Footer = () => {
                   <Phone size={18} />
                 </div>
                 <div>
-                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Phone</p>
-                  <a href="tel:+919876543210" className="text-zinc-300 hover:text-white transition-colors">+91 98765 43210</a>
+                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">{t("footer.phone")}</p>
+                  <a href="tel:+919440602166" className="text-zinc-300 hover:text-white transition-colors">+91 94406 02166</a>
                 </div>
               </li>
               <li className="flex items-start gap-4 group">
@@ -118,8 +103,8 @@ const Footer = () => {
                   <MapPin size={18} />
                 </div>
                 <div>
-                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Location</p>
-                  <p className="text-zinc-300">Andhra Pradesh, India</p>
+                  <p className="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">{t("footer.location")}</p>
+                  <p className="text-zinc-300">{t("footer.andhraPradeshIndia")}</p>
                 </div>
               </li>
             </ul>
@@ -127,8 +112,8 @@ const Footer = () => {
 
           {/* Social Media */}
           <div className="space-y-6">
-            <h3 className="text-white font-bold text-lg">Follow Us</h3>
-            <p className="text-zinc-400 text-sm">Join our community for regular updates and farming tips.</p>
+            <h3 className="text-white font-bold text-lg">{t("footer.followUs")}</h3>
+            <p className="text-zinc-400 text-sm">{t("footer.joinCommunity")}</p>
             <div className="flex gap-4">
               {socialLinks.map((social, idx) => (
                 <a 
@@ -150,19 +135,19 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex flex-col items-center md:items-start gap-1">
               <p className="text-zinc-500 text-sm flex items-center gap-2">
-                © {new Date().getFullYear()} <span className="text-zinc-300 font-medium">Kisan Mithr</span>. All rights reserved.
+                © {new Date().getFullYear()} <span className="text-zinc-300 font-medium">Kisan Mithr</span>. {t("footer.allRightsReserved")}
               </p>
-              <p className="text-zinc-600 text-[10px] uppercase tracking-[0.2em]">Designed & Developed by <span className="text-green-500 font-bold">Vignesh</span></p>
+              <p className="text-zinc-600 text-[10px] uppercase tracking-[0.2em]">{t("footer.designedBy")} <span className="text-green-500 font-bold">Vignesh</span></p>
             </div>
             
             <div className="flex items-center gap-6">
-              <a href="#" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">Privacy Policy</a>
+              <a href="#" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">{t("footer.privacyPolicy")}</a>
               <div className="w-1 h-1 rounded-full bg-zinc-800"></div>
               <button 
                 onClick={() => navigate('/terms')}
                 className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
               >
-                Terms & Conditions
+                {t("footer.termsConditions")}
               </button>
             </div>
           </div>

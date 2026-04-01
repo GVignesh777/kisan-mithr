@@ -9,8 +9,10 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar
 } from 'recharts';
+import useTranslation from '../../hooks/useTranslation';
 
 const SatelliteHealthCockpit = () => {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
@@ -86,7 +88,7 @@ const SatelliteHealthCockpit = () => {
                 >
                     <Satellite size={64} />
                 </motion.div>
-                <p className="text-xl font-black uppercase tracking-[0.4em] animate-pulse">Establishing Orbital Link...</p>
+                <p className="text-xl font-black uppercase tracking-[0.4em] animate-pulse">{t("satellitePage.establishingLink")}</p>
                 <div className="mt-4 flex gap-2">
                     {[1,2,3].map(i => <motion.div key={i} animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1, repeat: Infinity, delay: i*0.3 }} className="w-2 h-2 bg-cyan-500 rounded-full" />)}
                 </div>
@@ -98,10 +100,10 @@ const SatelliteHealthCockpit = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-red-500 p-8 text-center">
                 <AlertCircle size={64} className="mb-4" />
-                <h2 className="text-2xl font-black uppercase mb-2">Telemetry Error</h2>
+                <h2 className="text-2xl font-black uppercase mb-2">{t("satellitePage.telemetryError")}</h2>
                 <p className="text-zinc-500 mb-8 max-w-md">{error}</p>
                 <button onClick={() => fetchData(location.lat, location.lon)} className="px-8 py-3 bg-red-500/10 border border-red-500/50 rounded-full text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all">
-                    Retry Connection
+                    {t("satellitePage.retryConnection")}
                 </button>
             </div>
         );
@@ -120,15 +122,15 @@ const SatelliteHealthCockpit = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
                     <div>
                         <div className="flex items-center gap-2 text-cyan-400 font-mono text-[10px] tracking-widest uppercase mb-2">
-                            <Activity size={12} /> Live Telemetry Feed // {location.name}
+                            <Activity size={12} /> {t("satellitePage.liveTelemetryFeed")} // {location.name}
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter">
-                            SATELLITE<span className="text-cyan-500 underline decoration-cyan-500/30">HEALTH</span>COCKPIT
+                            {t("satellitePage.satelliteHealthCockpit")}
                         </h1>
                     </div>
                     <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex flex-col items-end">
                         <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-bold uppercase mb-1">
-                            <MapPin size={10} /> Ground Position
+                            <MapPin size={10} /> {t("satellitePage.groundPosition")}
                         </div>
                         <p className="text-sm font-mono text-cyan-400">{location.lat.toFixed(4)}°N / {location.lon.toFixed(4)}°E</p>
                     </div>
@@ -140,7 +142,7 @@ const SatelliteHealthCockpit = () => {
                         <div className="bg-zinc-900/60 border border-white/10 rounded-[2.5rem] overflow-hidden group shadow-2xl backdrop-blur-md">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                    <Globe className="text-cyan-500" size={16} /> Earth Visuals
+                                    <Globe className="text-cyan-500" size={16} /> {t("satellitePage.earthVisuals")}
                                 </h3>
                                 <div className="px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[10px] text-cyan-400 font-mono">
                                     LANDSAT_8
@@ -158,13 +160,13 @@ const SatelliteHealthCockpit = () => {
                                 ) : (
                                     <div className="text-center p-8 opacity-30">
                                         <Satellite size={48} className="mx-auto mb-4 animate-pulse" />
-                                        <p className="text-[10px] font-mono uppercase tracking-widest">No Cloud-Free Asset Found for this Date</p>
+                                        <p className="text-[10px] font-mono uppercase tracking-widest">{t("satellitePage.noCloudFreeAsset")}</p>
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                                 <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
                                     <div>
-                                        <p className="text-[8px] text-zinc-500 font-bold uppercase mb-1">Capture Date</p>
+                                        <p className="text-[8px] text-zinc-500 font-bold uppercase mb-1">{t("satellitePage.captureDate")}</p>
                                         <p className="text-xs font-mono flex items-center gap-2">
                                             <Calendar size={12} className="text-cyan-500" />
                                             {data?.imagery?.date?.split('T')[0] || "N/A"}
@@ -178,10 +180,10 @@ const SatelliteHealthCockpit = () => {
                         </div>
 
                         <div className="bg-cyan-500/5 border border-cyan-500/10 p-6 rounded-[2rem] backdrop-blur-md">
-                            <h4 className="text-[10px] font-black text-cyan-500 uppercase tracking-widest mb-4">Uplink Status</h4>
+                            <h4 className="text-[10px] font-black text-cyan-500 uppercase tracking-widest mb-4">{t("satellitePage.uplinkStatus")}</h4>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <p className="text-xs text-zinc-400">Signal Strength</p>
+                                    <p className="text-xs text-zinc-400">{t("satellitePage.signalStrength")}</p>
                                     <p className="text-xs font-mono text-cyan-400">98%</p>
                                 </div>
                                 <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
@@ -230,7 +232,7 @@ const SatelliteHealthCockpit = () => {
                             <div className="bg-zinc-900/60 border border-white/10 p-8 rounded-[3rem] backdrop-blur-xl">
                                 <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-3 mb-8 italic">
                                     <div className="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-                                    Temperature Gradient
+                                    {t("satellitePage.tempGradient")}
                                 </h3>
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -255,7 +257,7 @@ const SatelliteHealthCockpit = () => {
                             <div className="bg-zinc-900/60 border border-white/10 p-8 rounded-[3rem] backdrop-blur-xl">
                                 <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-3 mb-8 italic">
                                     <div className="w-1.5 h-6 bg-blue-500 rounded-full"></div>
-                                    Precipitation Matrix
+                                    {t("satellitePage.precipitationMatrix")}
                                 </h3>
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -281,7 +283,7 @@ const SatelliteHealthCockpit = () => {
                 </div>
                 <div className="flex gap-4 items-center">
                     <div className="w-32 h-px bg-white/10"></div>
-                    <div className="font-mono text-[8px] text-zinc-500 italic">GROUND STATION: TELANGANA_01</div>
+                    <div className="font-mono text-[8px] text-zinc-500 italic">{t("satellitePage.groundStation")}</div>
                 </div>
             </div>
         </div>

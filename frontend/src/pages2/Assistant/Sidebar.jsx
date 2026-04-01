@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Plus, MoreHorizontal, Edit2, Trash2, X, Check } from 'lucide-react';
+import useTranslation from '../../hooks/useTranslation';
 
-const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
+const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit, t }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(chat.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -59,7 +60,7 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
             />
         ) : (
             <div className={`text-sm truncate w-full pr-6 ${isActive ? 'font-medium' : ''}`}>
-                {chat.title || "New Conversation"}
+                {chat.title || t("assistant.newConversation")}
             </div>
         )}
       </div>
@@ -79,13 +80,13 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
                         onClick={(e) => { e.stopPropagation(); setIsEditing(true); setShowMenu(false); }}
                         className="flex items-center gap-2 w-full px-3 py-2 text-left text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
                     >
-                        <Edit2 size={14} /> Rename
+                        <Edit2 size={14} /> {t("assistant.rename") || "Rename"}
                     </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); onDelete(chat.id); setShowMenu(false); }}
                         className="flex items-center gap-2 w-full px-3 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
                     >
-                        <Trash2 size={14} /> Delete
+                        <Trash2 size={14} /> {t("assistant.delete") || "Delete"}
                     </button>
                 </div>
             )}
@@ -105,6 +106,7 @@ const ChatItem = ({ chat, isActive, onSelect, onDelete, onEdit }) => {
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, onEditChat }) => {
+  const { t } = useTranslation();
   const [width, setWidth] = useState(260); // Default ChatGPT width
   const sidebarRef = useRef(null);
   const isDragging = useRef(false);
@@ -165,21 +167,21 @@ const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, o
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 mb-4 border border-green-500/30 bg-green-600/20 rounded-md text-sm font-medium hover:bg-green-600/40 hover:border-green-400/50 transition-all duration-300 text-white shadow-sm"
           >
               <Plus size={18} className="text-green-400" />
-              New Chat
+              {t("assistant.newChat") || "New Chat"}
           </button>
 
-          <NavLink to="/" icon={<MessageSquare size={16}/>} label="Smart Assistant" />
-          <NavLink to="/weather" icon={<span style={{fontSize:'16px'}}>🌤️</span>} label="Weather Dashboard" />
-          <NavLink to="/market" icon={<span style={{fontSize:'16px'}}>📈</span>} label="Market Prices" />
-          <NavLink to="/crop-health" icon={<span style={{fontSize:'16px'}}>🛰️</span>} label="Crop Health Map" />
-          <NavLink to="/pest-detect" icon={<span style={{fontSize:'16px'}}>🐛</span>} label="Pest Detector" />
-          <NavLink to="/farm-profile" icon={<span style={{fontSize:'16px'}}>⚙️</span>} label="Farm Profile" />
+          <NavLink to="/" icon={<MessageSquare size={16}/>} label={t("assistant.smartAssistant") || "Smart Assistant"} />
+          <NavLink to="/weather" icon={<span style={{fontSize:'16px'}}>🌤️</span>} label={t("assistant.weatherDashboard") || "Weather Dashboard"} />
+          <NavLink to="/market" icon={<span style={{fontSize:'16px'}}>📈</span>} label={t("assistant.marketPrices") || "Market Prices"} />
+          <NavLink to="/crop-health" icon={<span style={{fontSize:'16px'}}>🛰️</span>} label={t("assistant.cropHealthMap") || "Crop Health Map"} />
+          <NavLink to="/pest-detect" icon={<span style={{fontSize:'16px'}}>🐛</span>} label={t("assistant.pestDetector") || "Pest Detector"} />
+          <NavLink to="/farm-profile" icon={<span style={{fontSize:'16px'}}>⚙️</span>} label={t("assistant.farmProfile") || "Farm Profile"} />
       </div>
 
       {/* Chat History List */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-3 pb-4">
           <div className="text-xs font-semibold text-zinc-500 mb-3 px-2 uppercase tracking-wider">
-              Recent Chats
+              {t("assistant.recentChats") || "Recent Chats"}
           </div>
           {chats.slice().reverse().map(chat => (
               <ChatItem 
@@ -189,11 +191,12 @@ const Sidebar = ({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, o
                   onSelect={onSelectChat}
                   onDelete={onDeleteChat}
                   onEdit={onEditChat}
+                  t={t}
               />
           ))}
           {chats.length === 0 && (
               <div className="text-zinc-500 text-sm px-2 mt-4 text-center">
-                  No previous conversations
+                  {t("assistant.noPrevious") || "No previous conversations"}
               </div>
           )}
       </div>

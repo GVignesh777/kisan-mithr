@@ -3,9 +3,11 @@ import { Camera, Save, User, Lock, Briefcase, Mail, Shield, AlertCircle } from '
 import useUserStore from '../../store/useUserStore';
 import { updateUserProfile } from '../../services/user.service';
 import { toast } from 'react-toastify';
+import useTranslation from '../../hooks/useTranslation';
 
 const ProfilePage = () => {
     const { user, setUser } = useUserStore();
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     
     const [formData, setFormData] = useState({
@@ -97,9 +99,9 @@ const ProfilePage = () => {
                 
                 <div className="text-center">
                     <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 tracking-tight">
-                        Account Settings
+                        {t("profilePage.accountSettings")}
                     </h2>
-                    <p className="mt-2 text-zinc-400">Manage your profile, security, and preferences seamlessly.</p>
+                    <p className="mt-2 text-zinc-400">{t("profilePage.manageProfile")}</p>
                 </div>
 
                 <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 md:p-10 shadow-2xl relative overflow-hidden">
@@ -138,7 +140,7 @@ const ProfilePage = () => {
                                 <h3 className="text-xl font-bold text-white">{formData.username || "User"}</h3>
                                 <p className="text-zinc-500 text-sm mb-3">{formData.email}</p>
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-widest">
-                                    {formData.role} Role Active
+                                    {formData.role} {t("profilePage.currentRole")}
                                 </span>
                             </div>
                         </div>
@@ -149,23 +151,23 @@ const ProfilePage = () => {
                             {/* Personal Info */}
                             <div className="space-y-5">
                                 <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <User size={16} className="text-emerald-500" /> Personal Details
+                                    <User size={16} className="text-emerald-500" /> {t("profilePage.personalDetails")}
                                 </h4>
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-zinc-400 mb-2">Display Name</label>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-2">{t("profilePage.displayName")}</label>
                                     <input 
                                         type="text" 
                                         name="username"
                                         value={formData.username}
                                         onChange={handleChange}
                                         className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-zinc-600"
-                                        placeholder="Enter your name"
+                                        placeholder={t("profilePage.enterYourName")}
                                     />
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-zinc-400 mb-2">Email Address</label>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-2">{t("profilePage.emailAddress")}</label>
                                     <div className="relative">
                                         <input 
                                             type="email" 
@@ -177,12 +179,12 @@ const ProfilePage = () => {
                                         <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" />
                                     </div>
                                     <p className="text-xs text-zinc-600 mt-2 flex items-center gap-1">
-                                        <AlertCircle size={12} /> Contact support to change email.
+                                        <AlertCircle size={12} /> {t("profilePage.contactSupportEmail")}
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-zinc-400 mb-2">Account Role</label>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-2">{t("profilePage.accountRole")}</label>
                                     <div className="relative">
                                         <select 
                                             name="role"
@@ -196,19 +198,19 @@ const ProfilePage = () => {
                                         </select>
                                         <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
                                     </div>
-                                    <p className="text-xs text-zinc-500 mt-2">Changing role will redirect to the respective dashboard on save.</p>
+                                    <p className="text-xs text-zinc-500 mt-2">{t("profilePage.changingRoleRedirect")}</p>
                                 </div>
                             </div>
 
                             {/* Security Box */}
                             <div className="space-y-5">
                                 <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Shield size={16} className="text-blue-500" /> Security
+                                    <Shield size={16} className="text-blue-500" /> {t("profilePage.security")}
                                 </h4>
                                 
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-zinc-800/40 to-black/20 border border-zinc-800/50 space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-zinc-400 mb-2">Current Password</label>
+                                        <label className="block text-sm font-medium text-zinc-400 mb-2">{t("profilePage.currentPassword")}</label>
                                         <div className="relative">
                                             <input 
                                                 type="password" 
@@ -223,7 +225,7 @@ const ProfilePage = () => {
                                     </div>
                                     
                                     <div>
-                                        <label className="block text-sm font-medium text-zinc-400 mb-2">New Password</label>
+                                        <label className="block text-sm font-medium text-zinc-400 mb-2">{t("profilePage.newPassword")}</label>
                                         <div className="relative">
                                             <input 
                                                 type="password" 
@@ -231,7 +233,7 @@ const ProfilePage = () => {
                                                 value={formData.newPassword}
                                                 onChange={handleChange}
                                                 className="w-full bg-black/60 border border-zinc-800 rounded-lg pl-10 pr-4 py-2.5 text-zinc-200 focus:outline-none focus:border-blue-500 transition-all placeholder-zinc-700"
-                                                placeholder="Leave blank to keep current"
+                                                placeholder={t("profilePage.leaveBlank")}
                                             />
                                             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600" />
                                         </div>
@@ -247,7 +249,7 @@ const ProfilePage = () => {
                                 onClick={() => window.history.back()}
                                 className="px-6 py-3 rounded-xl font-bold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                             >
-                                Cancel
+                                {t("profilePage.cancel")}
                             </button>
                             <button 
                                 type="submit"
@@ -257,7 +259,7 @@ const ProfilePage = () => {
                                 {isLoading ? (
                                     <div className="w-5 h-5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
-                                    <><Save size={18} /> Save Changes</>
+                                    <><Save size={18} /> {t("profilePage.saveChanges")}</>
                                 )}
                             </button>
                         </div>

@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const marketPriceSchema = new mongoose.Schema({
   commodity: String,
+  variety: String,
   state: String,
   district: String,
   market: String,

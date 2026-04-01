@@ -11,58 +11,57 @@ import useUserStore from "../../store/useUserStore";
 import { logoutUser } from "../../services/user.service";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-
-const profileItems = [
-  {
-    icon: LayoutDashboard,
-    title: "Dashboard",
-    desc: "Access your personalized dashboard",
-    path: "/"
-  },
-  {
-    icon: User,
-    title: "Edit Profile",
-    desc: "Update your personal information",
-    path: "/profile"
-  },
-  {
-    icon: Shield,
-    title: "Switch Role",
-    desc: "Change to Farmer, Buyer, or Admin",
-    path: "/role"
-  },
-  {
-    icon: Bell,
-    title: "Notifications",
-    desc: "Check alerts & scheme updates",
-    path: "/notifications"
-  },
-  {
-    icon: Settings,
-    title: "Account Settings",
-    desc: "Customize your account preferences",
-    path: "#"
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownProfile = () => {
   const { user, clearUser } = useUserStore();
   const navigate = useNavigate();
-  const userName = user?.username || user?.googleName || "Guest";
-  // console.log("user", user)
+  const { t } = useTranslation();
+  
+  const userName = user?.username || user?.googleName || t("header.guest");
   const profile =
     user?.profilePicture ||
     user?.googlePhoto ||
     "";
   const role = user?.role;
-  console.log(profile);
-  // console.log("profile is,", user.googlePhoto)
+
+  const profileItems = [
+    {
+      icon: LayoutDashboard,
+      title: t("dropdownProfile.dashboard"),
+      desc: t("dropdownProfile.dashboardDesc"),
+      path: "/"
+    },
+    {
+      icon: User,
+      title: t("dropdownProfile.editProfile"),
+      desc: t("dropdownProfile.editProfileDesc"),
+      path: "/profile"
+    },
+    {
+      icon: Shield,
+      title: t("dropdownProfile.switchRole"),
+      desc: t("dropdownProfile.switchRoleDesc"),
+      path: "/role"
+    },
+    {
+      icon: Bell,
+      title: t("dropdownProfile.notifications"),
+      desc: t("dropdownProfile.notificationsDesc"),
+      path: "/notifications"
+    },
+    {
+      icon: Settings,
+      title: t("dropdownProfile.accountSettings"),
+      desc: t("dropdownProfile.accountSettingsDesc"),
+      path: "#"
+    },
+  ];
 
   const handleLogOut = async () => {
     try {
       await logoutUser();
       clearUser();
-      // navigate("/user-login");
       toast.success("user logged out successfully");
     } catch (error) {
       toast.error("Failed to logout");
@@ -90,7 +89,7 @@ const DropdownProfile = () => {
 
         <div className="overflow-hidden">
           <h3 className="text-sm font-semibold text-zinc-100 truncate">{userName}</h3>
-          <p className="text-xs text-zinc-400 capitalize">{role || 'User'} • Telangana</p>
+          <p className="text-xs text-zinc-400 capitalize">{role || t("header.user")} • {t("header.telangana")}</p>
         </div>
       </div>
 
@@ -130,7 +129,7 @@ const DropdownProfile = () => {
             <LogOut className="w-4 h-4 text-zinc-400 group-hover/logout:text-red-400 transition-colors" />
           </div>
           <span className="text-sm font-semibold text-zinc-300 group-hover/logout:text-red-400 transition-colors">
-            Logout
+            {t("logout")}
           </span>
         </div>
       </div>

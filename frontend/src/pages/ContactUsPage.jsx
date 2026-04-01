@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { sendEmail } from "../utils/sendEmail";
+
 import { 
   Phone, 
   Mail, 
@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import Header from "../components/header/Header";
 import Footer from "../components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
+import useTranslation from "../hooks/useTranslation";
 
 // Validation Schema
 const schema = yup.object().shape({
@@ -38,6 +39,7 @@ const ContactUsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
+  const { t, language } = useTranslation();
   
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
@@ -161,13 +163,13 @@ const ContactUsPage = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-4">
-            Contact <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">Kisan Mithr</span>
+          <h1 className={`${language === 'te' ? 'text-2xl md:text-5xl' : 'text-3xl md:text-6xl'} font-black tracking-tight mb-4`}>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">{t("contactPage.contactHeading")}</span>
           </h1>
-          <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            We are here to help farmers. Reach out to us anytime for support, feedback, or inquiries.
+          <p className="text-zinc-400 text-base md:text-xl max-w-2xl mx-auto leading-relaxed px-4">
+            {t("contactPage.contactSub")}
           </p>
-          <div className="w-24 h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 mx-auto mt-6 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
+          <div className="w-16 md:w-24 h-1 md:h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 mx-auto mt-6 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
         </motion.div>
 
         <div className="grid lg:grid-cols-12 gap-12 items-start">
@@ -179,7 +181,7 @@ const ContactUsPage = () => {
                 <span className="p-2 bg-green-500/10 rounded-lg text-green-400">
                    <Phone size={24} />
                 </span>
-                Contact Information
+                {t("contactPage.contactInfo")}
               </h3>
 
               <div className="space-y-6">
@@ -188,7 +190,7 @@ const ContactUsPage = () => {
                     <Mail size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">Email Us</p>
+                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">{t("contactPage.emailUs")}</p>
                     <p className="text-lg font-bold text-zinc-200">support@kisanmithr.com</p>
                   </div>
                 </div>
@@ -198,7 +200,7 @@ const ContactUsPage = () => {
                     <Phone size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">Call Us</p>
+                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">{t("contactPage.callUs")}</p>
                     <p className="text-lg font-bold text-zinc-200">+91 91XXX XXXXX</p>
                   </div>
                 </div>
@@ -208,8 +210,8 @@ const ContactUsPage = () => {
                     <MapPin size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">Location</p>
-                    <p className="text-lg font-bold text-zinc-200">Hyderabad, Telangana, India</p>
+                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">{t("contactPage.location")}</p>
+                    <p className="text-lg font-bold text-zinc-200">{t("contactPage.hyderabadTelanganaIndia")}</p>
                   </div>
                 </div>
 
@@ -218,14 +220,14 @@ const ContactUsPage = () => {
                     <Clock size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">Support Hours</p>
-                    <p className="text-lg font-bold text-zinc-200">Mon - Sat: 9:00 AM - 6:00 PM</p>
+                    <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-1">{t("contactPage.supportHours")}</p>
+                    <p className="text-lg font-bold text-zinc-200">{t("contactPage.supportHoursValue")}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-10 pt-8 border-t border-zinc-800">
-                <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-4">Follow Us</p>
+                <p className="text-sm text-zinc-500 font-medium uppercase tracking-wider mb-4">{t("contactPage.followUs")}</p>
                 <div className="flex gap-4">
                   <a 
                     href="https://github.com/GVignesh777" 
@@ -249,7 +251,7 @@ const ContactUsPage = () => {
 
             {/* Simple FAQ Preview */}
             <div className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800 rounded-3xl p-8 shadow-2xl mt-8">
-              <h3 className="text-xl font-bold mb-6">Frequently Asked Questions</h3>
+              <h3 className="text-xl font-bold mb-6">{t("contactPage.faqHeading")}</h3>
               <div className="space-y-4">
                 {faqs.map((faq, idx) => (
                   <div key={idx} className="border-b border-zinc-800 pb-4 last:border-0 last:pb-0">
@@ -284,26 +286,26 @@ const ContactUsPage = () => {
                {/* Decorative Gradient Overlay */}
                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-               <h3 className="text-3xl font-extrabold text-white mb-8 tracking-tight relative z-10">Send us a Message</h3>
+               <h3 className="text-3xl font-extrabold text-white mb-8 tracking-tight relative z-10">{t("contactPage.sendMessageHeading")}</h3>
                
                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative z-10">
                  <div className="grid sm:grid-cols-2 gap-6">
                    <div className="space-y-2">
-                     <label className="text-sm font-bold text-zinc-400 ml-1">Full Name</label>
+                     <label className="text-sm font-bold text-zinc-400 ml-1">{t("contactPage.fullName")}</label>
                      <input 
                        {...register("fullName")}
                        className={`w-full px-5 py-4 bg-zinc-950/50 border ${errors.fullName ? 'border-red-500/50' : 'border-zinc-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 transition-all font-medium text-white placeholder:text-zinc-600`}
-                       placeholder="e.g. John Doe"
+                       placeholder={t("contactPage.fullNamePlaceholder")}
                      />
                      {errors.fullName && <p className="text-red-500 text-xs mt-1 font-bold ml-1 flex items-center gap-1"><AlertCircle size={12}/> {errors.fullName.message}</p>}
                    </div>
 
                    <div className="space-y-2">
-                     <label className="text-sm font-bold text-zinc-400 ml-1">Email Address</label>
+                     <label className="text-sm font-bold text-zinc-400 ml-1">{t("contactPage.emailAddress")}</label>
                      <input 
                        {...register("email")}
                        className={`w-full px-5 py-4 bg-zinc-950/50 border ${errors.email ? 'border-red-500/50' : 'border-zinc-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 transition-all font-medium text-white placeholder:text-zinc-600`}
-                       placeholder="e.g. help@farmer.com"
+                       placeholder={t("contactPage.emailPlaceholder")}
                      />
                      {errors.email && <p className="text-red-500 text-xs mt-1 font-bold ml-1 flex items-center gap-1"><AlertCircle size={12}/> {errors.email.message}</p>}
                    </div>
@@ -311,26 +313,26 @@ const ContactUsPage = () => {
 
                  <div className="grid sm:grid-cols-2 gap-6">
                    <div className="space-y-2">
-                     <label className="text-sm font-bold text-zinc-400 ml-1">Phone Number</label>
+                     <label className="text-sm font-bold text-zinc-400 ml-1">{t("contactPage.phoneNumber")}</label>
                      <input 
                        {...register("phone")}
                        className={`w-full px-5 py-4 bg-zinc-950/50 border ${errors.phone ? 'border-red-500/50' : 'border-zinc-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 transition-all font-medium text-white placeholder:text-zinc-600`}
-                       placeholder="+91 XXXXX XXXXX"
+                       placeholder={t("contactPage.phonePlaceholder")}
                      />
                      {errors.phone && <p className="text-red-500 text-xs mt-1 font-bold ml-1 flex items-center gap-1"><AlertCircle size={12}/> {errors.phone.message}</p>}
                    </div>
 
                    <div className="space-y-2">
-                     <label className="text-sm font-bold text-zinc-400 ml-1">Subject</label>
+                     <label className="text-sm font-bold text-zinc-400 ml-1">{t("contactPage.subject")}</label>
                      <div className="relative">
                         <select 
                           {...register("subject")}
                           className="w-full px-5 py-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 transition-all font-medium text-white appearance-none cursor-pointer"
                         >
-                          <option value="Support">Support</option>
-                          <option value="Feedback">Feedback</option>
-                          <option value="Complaint">Complaint</option>
-                          <option value="Inquiry">Inquiry</option>
+                          <option value="Support">{t("contactPage.optSupport")}</option>
+                          <option value="Feedback">{t("contactPage.optFeedback")}</option>
+                          <option value="Complaint">{t("contactPage.optComplaint")}</option>
+                          <option value="Inquiry">{t("contactPage.optInquiry")}</option>
                         </select>
                         <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" size={20} />
                      </div>
@@ -339,21 +341,21 @@ const ContactUsPage = () => {
 
                  <div className="space-y-2">
                    <div className="flex justify-between items-center ml-1">
-                     <label className="text-sm font-bold text-zinc-400">Your Message</label>
+                     <label className="text-sm font-bold text-zinc-400">{t("contactPage.yourMessage")}</label>
                      <button 
                        type="button" 
                        onClick={toggleListening}
                        className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full transition-all ${isListening ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'}`}
                      >
                        {isListening ? <MicOff size={14} /> : <Mic size={14} />}
-                       {isListening ? "Stop Recording" : "Use Voice Input"}
+                       {isListening ? t("contactPage.stopRecording") : t("contactPage.useVoiceInput")}
                      </button>
                    </div>
                    <textarea 
                      {...register("message")}
                      rows={5}
                      className={`w-full px-5 py-4 bg-zinc-950/50 border ${errors.message ? 'border-red-500/50' : 'border-zinc-800'} rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 transition-all font-medium text-white placeholder:text-zinc-600 resize-none`}
-                     placeholder="How can we help you today?"
+                     placeholder={t("contactPage.messagePlaceholder")}
                    />
                    {errors.message && <p className="text-red-500 text-xs mt-1 font-bold ml-1 flex items-center gap-1"><AlertCircle size={12}/> {errors.message.message}</p>}
                  </div>
@@ -361,16 +363,16 @@ const ContactUsPage = () => {
                  <button 
                    type="submit" 
                    disabled={isSubmitting}
-                   className="w-full py-5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-lg rounded-2xl shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_15px_40px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 disabled:opacity-70 disabled:hover:translate-y-0"
+                   className="w-full py-4 md:py-5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-base md:text-lg rounded-2xl shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] hover:shadow-[0_15px_40px_-10px_rgba(16,185,129,0.6)] transition-all duration-300 flex items-center justify-center gap-3 transform hover:-translate-y-1 disabled:opacity-70 disabled:hover:translate-y-0"
                  >
                    {isSubmitting ? (
                      <div className="flex items-center gap-2">
                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                       <span>Sending...</span>
+                       <span>{t("contactPage.sending")}</span>
                      </div>
                    ) : (
                      <span className="flex items-center gap-2">
-                        Send Message <Send size={20} />
+                        {t("contactPage.sendMessageBtn")} <Send size={20} />
                      </span>
                    )}
                  </button>

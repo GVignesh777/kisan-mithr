@@ -1,5 +1,6 @@
 import React from 'react';
 import { Linkedin, Github, Mail, ExternalLink } from 'lucide-react';
+import useTranslation from "../hooks/useTranslation";
 
 const TeamCard = ({ member }) => {
   return (
@@ -105,12 +106,14 @@ const TeamCard = ({ member }) => {
 };
 
 const OurTeam = () => {
+  const { t, language } = useTranslation();
+
   const teamMembers = [
     {
       name: "Vignesh",
-      role: "Frontend Developer",
-      badge: "Founder",
-      description: "Passionate about building modern, responsive, and user-friendly web applications.",
+      role: t("ourTeam.vigneshRole") || "Frontend Developer",
+      badge: t("ourTeam.vigneshBadge") || "Founder",
+      description: t("ourTeam.vigneshDesc") || "Passionate about building modern, responsive, and user-friendly web applications.",
       skills: ["HTML", "JavaScript", "Tailwind CSS", "React JS", "Node.js", "PHP", "MySQL"],
       socials: {
         linkedin: "https://www.linkedin.com/in/g-vignesh-b6b6a2361/",
@@ -121,8 +124,8 @@ const OurTeam = () => {
     },
     {
       name: "Rahul Sharma",
-      role: "Backend Architect",
-      description: "Specializes in scalable cloud infrastructure and high-performance API design.",
+      role: t("ourTeam.rahulRole") || "Backend Architect",
+      description: t("ourTeam.rahulDesc") || "Specializes in scalable cloud infrastructure and high-performance API design.",
       skills: ["Node.js", "Express", "MongoDB", "Redis", "Docker", "AWS"],
       socials: {
         linkedin: "#",
@@ -133,8 +136,8 @@ const OurTeam = () => {
     },
     {
       name: "Ananya Patel",
-      role: "UI/UX Designer",
-      description: "Crafting intuitive digital experiences that simplify agriculture for everyone.",
+      role: t("ourTeam.ananyaRole") || "UI/UX Designer",
+      description: t("ourTeam.ananyaDesc") || "Crafting intuitive digital experiences that simplify agriculture for everyone.",
       skills: ["Figma", "Adobe XD", "Prototyping", "Design Systems", "Framermotion"],
       socials: {
         linkedin: "#",
@@ -145,8 +148,8 @@ const OurTeam = () => {
     },
     {
       name: "Arjun Reddy",
-      role: "AI/ML Engineer",
-      description: "Building intelligent models for crop disease detection and yield prediction.",
+      role: t("ourTeam.arjunRole") || "AI/ML Engineer",
+      description: t("ourTeam.arjunDesc") || "Building intelligent models for crop disease detection and yield prediction.",
       skills: ["Python", "TensorFlow", "PyTorch", "Computer Vision", "NLP"],
       socials: {
         linkedin: "#",
@@ -167,13 +170,13 @@ const OurTeam = () => {
         {/* Section Header */}
         <div className="text-center mb-20 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-black uppercase tracking-widest mb-2 animate-fade-in">
-             Meet the Visionaries
+             {t("ourTeam.meetVisionaries") || "Meet the Visionaries"}
           </div>
-          <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
-            Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">Team</span>
+          <h2 className={`${language === 'te' ? 'text-2xl md:text-5xl' : 'text-3xl md:text-6xl'} font-black text-white tracking-tighter leading-[1.2] md:leading-none`}>
+            {t("ourTeam.our") || "Our"} <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">{t("ourTeam.team") || "Team"}</span>
           </h2>
-          <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed font-medium">
-            Passionate developers & agriculture enthusiasts working to empower farmers and buyers.
+          <p className="text-zinc-400 text-base md:text-xl max-w-2xl mx-auto leading-relaxed font-medium px-4">
+            {t("ourTeam.subtitle") || "Passionate developers & agriculture enthusiasts working to empower farmers and buyers."}
           </p>
           <div className="w-24 h-1.5 bg-gradient-to-r from-green-500 to-emerald-500 mx-auto rounded-full shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
         </div>
@@ -196,11 +199,11 @@ const OurTeam = () => {
                     ))}
                 </div>
                 <p className="text-zinc-400 text-sm font-medium">
-                   Supported by <span className="text-white font-bold">10+ Contributors</span> world wide
+                   {t("ourTeam.supportedBy") || "Supported by"} <span className="text-white font-bold">{t("ourTeam.contributors") || "10+ Contributors"}</span> {t("ourTeam.worldWide") || "world wide"}
                 </p>
                 <div className="w-[1px] h-8 bg-zinc-800 hidden sm:block"></div>
                 <button className="text-green-400 text-sm font-bold flex items-center gap-2 hover:text-green-300 transition-colors hidden sm:flex">
-                   Join our mission <ExternalLink size={14} />
+                   {t("ourTeam.joinMission") || "Join our mission"} <ExternalLink size={14} />
                 </button>
             </div>
         </div>

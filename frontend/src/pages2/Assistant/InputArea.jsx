@@ -1,6 +1,7 @@
 import { Mic, MicOff, SendHorizontal, Keyboard } from 'lucide-react';
 import WaveformVisualizer from './WaveformVisualizer';
 import { useEffect, useRef, useState } from 'react';
+import useTranslation from '../../hooks/useTranslation';
 
 const InputArea = ({ 
     onSendMessage, 
@@ -9,6 +10,7 @@ const InputArea = ({
     inputMode, 
     setInputMode 
 }) => {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
   const isListening = assistantState === 'listening';
@@ -54,7 +56,7 @@ const InputArea = ({
                 ${inputMode === 'text' ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-black/20 text-zinc-400 border border-transparent hover:text-zinc-200'}`}
         >
             <Keyboard size={14} />
-            <span>Type Mode</span>
+            <span>{t("assistant.typeMode") || "Type Mode"}</span>
         </button>
         <button 
             onClick={() => setInputMode('voice')}
@@ -62,7 +64,7 @@ const InputArea = ({
                 ${inputMode === 'voice' ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50' : 'bg-black/20 text-zinc-400 border border-transparent hover:text-zinc-200'}`}
         >
             <Mic size={14} />
-            <span>Voice Mode</span>
+            <span>{t("assistant.voiceMode") || "Voice Mode"}</span>
         </button>
       </div>
 
@@ -92,7 +94,7 @@ const InputArea = ({
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask your farming question here..."
+                placeholder={t("assistant.askQuestionPlaceholder") || "Ask your farming question here..."}
                 disabled={isProcessing}
                 className="w-full bg-transparent text-white placeholder-zinc-500 p-3 outline-none resize-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-[44px] max-h-[120px] text-sm sm:text-base leading-relaxed"
                 rows={1}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
     CloudRain, Wind, Droplets, Sun, Calendar, MapPin, 
-    Sunrise, Sunset, Compass, AlertCircle, Leaf, Gauge
+    Sunrise, Compass, AlertCircle, Leaf, Gauge
 } from 'lucide-react';
 import useTranslation from '../../hooks/useTranslation';
 
@@ -10,12 +10,12 @@ const WeatherDashboard = () => {
     const { t } = useTranslation();
     const [weather, setWeather] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [locationStatus, setLocationStatus] = useState("Detecting location...");
+    const [error] = useState(null);
+    const [locationStatus, setLocationStatus] = useState(t("weather.detectingLocation") || "Detecting location...");
 
     useEffect(() => {
         const fetchWeatherWithCoords = (lat, lng) => {
-            setLocationStatus("Fetching local weather...");
+            setLocationStatus(t("weather.fetchingLocalWeather") || "Fetching local weather...");
             fetch(`${process.env.REACT_APP_API_URL}/api/weather/coords?lat=${lat}&lng=${lng}`)
                 .then(res => {
                     if (!res.ok) throw new Error('Weather data fetch failed');
@@ -32,7 +32,7 @@ const WeatherDashboard = () => {
         };
 
         const fallbackToDefault = () => {
-            setLocationStatus("Using default location...");
+            setLocationStatus(t("weather.usingDefaultLocation") || "Using default location...");
             fetch(`${process.env.REACT_APP_API_URL}/api/weather/Warangal`)
                 .then(res => {
                     if (!res.ok) throw new Error("Fallback failed");
@@ -59,7 +59,7 @@ const WeatherDashboard = () => {
                             sunset: "18:40",
                             rainProb: Math.floor(Math.random()*30)
                         })),
-                        farmingRecommendation: "Current simulation active. Weather conditions appear stable. Maintain regular irrigation schedules."
+                        farmingRecommendation: t("weather.simulationActive") || "Current simulation active. Weather conditions appear stable. Maintain regular irrigation schedules."
                     };
                     setWeather(mockData);
                     setIsLoading(false);
@@ -84,7 +84,7 @@ const WeatherDashboard = () => {
         } else {
             fallbackToDefault();
         }
-    }, []);
+    }, [t]);
 
     if (isLoading) {
         return (
@@ -108,7 +108,7 @@ const WeatherDashboard = () => {
                 <AlertCircle size={64} className="text-red-500 mb-6" />
                 <p className="text-zinc-300 text-xl max-w-md text-center">{error}</p>
                 <button onClick={() => window.location.reload()} className="mt-8 px-8 py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:opacity-90 rounded-full transition-opacity font-bold text-white shadow-lg">
-                    Retry Connection
+                    {t("weather.retryConnection") || "Retry Connection"}
                 </button>
             </div>
         );
@@ -128,7 +128,7 @@ const WeatherDashboard = () => {
                 >
                     <div>
                         <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-white mb-1 drop-shadow-md">
-                            {t("weatherForecast") || "Local Weather"}
+                            {t("weather.weatherForecast") || "Local Weather"}
                         </h1>
                         <p className="text-green-400 flex items-center gap-2 text-lg font-medium">
                             <MapPin size={20} className="text-red-400" /> {location}
@@ -140,7 +140,7 @@ const WeatherDashboard = () => {
                             {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                         <p className="text-zinc-500 text-sm mt-1">
-                            Live open-meteo data
+                            {t("weather.liveData") || "Live open-meteo data"}
                         </p>
                     </div>
                 </motion.div>
@@ -158,7 +158,7 @@ const WeatherDashboard = () => {
                     </div>
                     <div>
                         <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest rounded-full mb-3">
-                            Smart Agricultural Insight
+                            {t("weather.smartInsight") || "Smart Agricultural Insight"}
                         </span>
                         <p className="text-zinc-100 text-xl font-medium leading-relaxed drop-shadow-sm">{farmingRecommendation}</p>
                     </div>
@@ -179,26 +179,26 @@ const WeatherDashboard = () => {
                         <div className={`absolute -top-32 -right-32 w-80 h-80 rounded-full blur-[120px] opacity-30 pointer-events-none transition-colors duration-1000 ${current.isDay ? 'bg-yellow-500' : 'bg-blue-600'}`}></div>
 
                         <div className="relative z-10">
-                            <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] mb-6">Right Now</p>
+                            <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] mb-6">{t("weather.rightNow") || "Right Now"}</p>
                             <div className="flex items-center justify-between mb-10">
                                 <h2 className="text-7xl md:text-8xl lg:text-[7rem] font-black text-white tracking-tighter">{current.temp}°</h2>
                                 <Sun size={90} className={`${current.isDay ? 'text-yellow-400 drop-shadow-[0_0_35px_rgba(250,204,21,0.6)]' : 'text-blue-300 drop-shadow-[0_0_35px_rgba(147,197,253,0.4)]'}`} />
                             </div>
                             <h3 className="text-3xl font-bold text-white mb-2">{current.condition}</h3>
-                            <p className="text-zinc-400 text-lg">Feels like {current.temp + (current.humidity > 70 ? 2 : -1)}°</p>
+                            <p className="text-zinc-400 text-lg">{t("weather.feelsLike") || "Feels like"} {current.temp + (current.humidity > 70 ? 2 : -1)}°</p>
                         </div>
 
                         <div className="mt-10 pt-8 border-t border-white/10 grid grid-cols-2 gap-4 relative z-10">
                             <div>
-                                <p className="text-zinc-500 text-sm uppercase font-bold tracking-wider mb-2">High / Low</p>
+                                <p className="text-zinc-500 text-sm uppercase font-bold tracking-wider mb-2">{t("weather.highLow") || "High / Low"}</p>
                                 <p className="text-white text-xl font-bold">{forecast && forecast[0] ? forecast[0].tempMax : '--'}° / {forecast && forecast[0] ? forecast[0].tempMin : '--'}°</p>
                             </div>
                             <div>
-                                <p className="text-zinc-500 text-sm uppercase font-bold tracking-wider mb-2">UV Index</p>
+                                <p className="text-zinc-500 text-sm uppercase font-bold tracking-wider mb-2">{t("weather.uvIndex") || "UV Index"}</p>
                                 <p className="text-white text-xl font-bold flex items-baseline gap-2">
                                     {forecast && forecast[0] ? forecast[0].uvIndex : '--'} 
                                     <span className={`text-sm font-medium ${forecast[0]?.uvIndex > 7 ? 'text-red-400' : 'text-emerald-400'}`}>
-                                        ({forecast[0]?.uvIndex > 7 ? 'High' : 'Mod'})
+                                        ({forecast[0]?.uvIndex > 7 ? (t("weather.high") || 'High') : (t("weather.mod") || 'Mod')})
                                     </span>
                                 </p>
                             </div>
@@ -214,37 +214,37 @@ const WeatherDashboard = () => {
                     >
                         <MetricCard 
                             icon={<CloudRain className="text-blue-400" size={28} />}
-                            title={t("rainProbability") || "Rain Prob"}
+                            title={t("weather.rainProb") || "Rain Prob"}
                             value={`${current.rainProb}%`}
-                            subValue={current.rainProb > 50 ? "Bring an umbrella" : "Clear skies likely"}
+                            subValue={current.rainProb > 50 ? (t("weather.bringUmbrella") || "Bring an umbrella") : (t("weather.clearSkies") || "Clear skies likely")}
                             bg="bg-blue-500/10"
                         />
                         <MetricCard 
                             icon={<Wind className="text-cyan-400" size={28} />}
-                            title={t("windSpeed") || "Wind"}
+                            title={t("weather.wind") || "Wind"}
                             value={`${current.windSpeed} km/h`}
-                            subValue={`Dir: ${current.windDirection || 0}°`}
+                            subValue={`${t("weather.dir") || "Dir"}: ${current.windDirection || 0}°`}
                             bg="bg-cyan-500/10"
                         />
                         <MetricCard 
                             icon={<Droplets className="text-teal-400" size={28} />}
-                            title={t("humidity") || "Humidity"}
+                            title={t("weather.humidity") || "Humidity"}
                             value={`${current.humidity}%`}
-                            subValue={current.humidity > 60 ? "Muggy" : "Comfortable"}
+                            subValue={current.humidity > 60 ? (t("weather.muggy") || "Muggy") : (t("weather.comfortable") || "Comfortable")}
                             bg="bg-teal-500/10"
                         />
                         <MetricCard 
                             icon={<Compass className="text-indigo-400" size={28} />}
-                            title="Evapo-Loss"
+                            title={t("weather.evapoLoss") || "Evapo-Loss"}
                             value={`${forecast && forecast[0] ? forecast[0].evapotranspiration : 0} mm`}
-                            subValue="Daily water lost"
+                            subValue={t("weather.dailyWaterLost") || "Daily water lost"}
                             bg="bg-indigo-500/10"
                         />
                         <MetricCard 
                             icon={<Gauge className="text-rose-400" size={28} />}
-                            title="Pressure"
+                            title={t("weather.pressure") || "Pressure"}
                             value={`${Math.round(current.pressure || 1013)} hP`}
-                            subValue="Surface level"
+                            subValue={t("weather.surfaceLevel") || "Surface level"}
                             bg="bg-rose-500/10"
                         />
                         
@@ -254,15 +254,15 @@ const WeatherDashboard = () => {
                                 <div className="p-2.5 bg-orange-500/10 rounded-xl">
                                     <Sunrise className="text-orange-400" size={24} />
                                 </div>
-                                <p className="text-zinc-400 font-bold uppercase tracking-wider text-sm">Sun Cycle</p>
+                                <p className="text-zinc-400 font-bold uppercase tracking-wider text-sm">{t("weather.sunCycle") || "Sun Cycle"}</p>
                             </div>
                             <div className="space-y-4 mt-auto">
                                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                                    <span className="text-zinc-500 font-medium">Rise</span>
+                                    <span className="text-zinc-500 font-medium">{t("weather.rise") || "Rise"}</span>
                                     <span className="text-white font-bold">{forecast && forecast[0] ? forecast[0].sunrise : '--'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-zinc-500 font-medium">Set</span>
+                                    <span className="text-zinc-500 font-medium">{t("weather.set") || "Set"}</span>
                                     <span className="text-white font-bold">{forecast && forecast[0] ? forecast[0].sunset : '--'}</span>
                                 </div>
                             </div>
@@ -279,7 +279,7 @@ const WeatherDashboard = () => {
                 >
                     <h3 className="text-2xl font-black mb-8 flex items-center gap-3 px-2 tracking-tight">
                         <Calendar size={28} className="text-green-400"/> 
-                        {t("sevenDayForecast") || "7-Day Future Forecast"}
+                        {t("weather.sevenDayForecast") || "7-Day Future Forecast"}
                     </h3>
                     
                     {/* Horizontal scroll container */}
@@ -292,7 +292,7 @@ const WeatherDashboard = () => {
                                 `}
                             >
                                 <div className="text-center">
-                                    <p className="text-white font-black text-xl mb-1">{idx === 0 ? 'Today' : day.day}</p>
+                                    <p className="text-white font-black text-xl mb-1">{idx === 0 ? (t("weather.today") || 'Today') : day.day}</p>
                                     <p className="text-zinc-500 text-sm font-medium tracking-wide">{day.date}</p>
                                 </div>
                                 

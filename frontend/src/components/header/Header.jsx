@@ -27,7 +27,7 @@ export default function Header() {
   const isGuest = !userData || Object.keys(userData).length === 0;
   const showUserProfile = !isTermsPage || !isGuest;
   
-  const userName = userData?.username || userData?.googleName || "Guest";
+  const userName = userData?.username || userData?.googleName || t("header.guest");
   const profilePic = userData?.profilePicture || userData?.googlePhoto;
 
   const getUser = async () => {
@@ -173,7 +173,7 @@ export default function Header() {
 
         {/* Language & User Profile */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:block">
+          <div className="flex items-center">
             <LanguageSwitcher scrolled={scrolled} />
           </div>
 

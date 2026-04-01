@@ -8,48 +8,50 @@ import {
   Globe,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const aboutItems = [
-  {
-    icon: Target,
-    title: "Our Mission",
-    desc: "Empowering farmers through digital innovation",
-    path: "/",
-  },
-  {
-    icon: Sprout,
-    title: "Our Vision",
-    desc: "Building a smarter and sustainable agriculture ecosystem",
-    path: "/",
-  },
-  {
-    icon: Users,
-    title: "Our Team",
-    desc: "Passionate developers & agriculture enthusiasts",
-    path: "/our-team",
-  },
-  {
-    icon: Lightbulb,
-    title: "Innovation",
-    desc: "AI-powered smart farming solutions",
-    path: "/assistant",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Trust & Security",
-    desc: "Secure platform for farmers and buyers",
-    path: "/",
-  },
-  {
-    icon: Globe,
-    title: "Community Impact",
-    desc: "Connecting rural farmers to digital markets",
-    path: "/market",
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownAbout = ({ isMobile, onClose }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const aboutItems = [
+    {
+      icon: Target,
+      title: t("dropdownAbout.ourMission"),
+      desc: t("dropdownAbout.ourMissionDesc"),
+      path: "/",
+    },
+    {
+      icon: Sprout,
+      title: t("dropdownAbout.ourVision"),
+      desc: t("dropdownAbout.ourVisionDesc"),
+      path: "/",
+    },
+    {
+      icon: Users,
+      title: t("dropdownAbout.ourTeam"),
+      desc: t("dropdownAbout.ourTeamDesc"),
+      path: "/our-team",
+    },
+    {
+      icon: Lightbulb,
+      title: t("dropdownAbout.innovation"),
+      desc: t("dropdownAbout.innovationDesc"),
+      path: "/assistant",
+    },
+    {
+      icon: ShieldCheck,
+      title: t("dropdownAbout.trustSecurity"),
+      desc: t("dropdownAbout.trustSecurityDesc"),
+      path: "/",
+    },
+    {
+      icon: Globe,
+      title: t("dropdownAbout.communityImpact"),
+      desc: t("dropdownAbout.communityImpactDesc"),
+      path: "/market",
+    },
+  ];
 
   if (isMobile) {
     return (
@@ -82,10 +84,10 @@ const DropdownAbout = ({ isMobile, onClose }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          About Kisan Mithr <span className="text-green-500">🌱</span>
+          {t("dropdownAbout.aboutHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          Learn more about our mission, vision, and impact
+          {t("dropdownAbout.aboutSub")}
         </p>
       </div>
 
@@ -120,4 +122,4 @@ const DropdownAbout = ({ isMobile, onClose }) => {
   );
 };
 
-export default DropdownAbout;
+export default DropdownAbout;

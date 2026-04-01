@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import useLanguageStore from '../../store/useLanguageStore';
 
 const languages = [
   { 
-    code: 'en-IN', 
+    code: 'en', 
     name: 'English', 
     native: 'English',
     fontClass: 'font-sans', 
@@ -12,7 +13,7 @@ const languages = [
     textClass: 'text-sm'
   },
   { 
-    code: 'te-IN', 
+    code: 'te', 
     name: 'Telugu', 
     native: 'తెలుగు',
     fontClass: 'font-anek', 
@@ -22,7 +23,7 @@ const languages = [
     textClass: 'text-[15px] leading-relaxed' 
   },
   { 
-    code: 'hi-IN', 
+    code: 'hi', 
     name: 'Hindi', 
     native: 'हिंदी',
     fontClass: 'font-hind', 
@@ -33,7 +34,8 @@ const languages = [
   },
 ];
 
-const LanguageSelector = ({ language, setLanguage }) => {
+const LanguageSelector = () => {
+  const { language, setLanguage } = useLanguageStore();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 

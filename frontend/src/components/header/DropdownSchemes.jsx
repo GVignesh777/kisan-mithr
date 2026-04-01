@@ -8,48 +8,50 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const schemesItems = [
-  {
-    icon: Landmark,
-    title: "Central Schemes",
-    desc: "Explore national agriculture welfare programs",
-    path: "/schemes",
-  },
-  {
-    icon: Sprout,
-    title: "State Schemes",
-    desc: "Telangana farmer benefits & subsidies",
-    path: "/schemes",
-  },
-  {
-    icon: Banknote,
-    title: "Subsidies & Grants",
-    desc: "Financial support for seeds, equipment & irrigation",
-    path: "/schemes",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Crop Insurance",
-    desc: "Protection against crop loss & natural risks",
-    path: "/schemes",
-  },
-  {
-    icon: FileText,
-    title: "Eligibility Checker",
-    desc: "Find schemes matching your profile",
-    path: "/schemes",
-  },
-  {
-    icon: CalendarDays,
-    title: "Latest Announcements",
-    desc: "Stay updated with new scheme releases",
-    path: "/schemes",
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownSchemes = ({ isMobile }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const schemesItems = [
+    {
+      icon: Landmark,
+      title: t("dropdownSchemes.centralSchemes"),
+      desc: t("dropdownSchemes.centralSchemesDesc"),
+      path: "/schemes",
+    },
+    {
+      icon: Sprout,
+      title: t("dropdownSchemes.stateSchemes"),
+      desc: t("dropdownSchemes.stateSchemesDesc"),
+      path: "/schemes",
+    },
+    {
+      icon: Banknote,
+      title: t("dropdownSchemes.subsidiesGrants"),
+      desc: t("dropdownSchemes.subsidiesGrantsDesc"),
+      path: "/schemes",
+    },
+    {
+      icon: ShieldCheck,
+      title: t("dropdownSchemes.cropInsurance"),
+      desc: t("dropdownSchemes.cropInsuranceDesc"),
+      path: "/schemes",
+    },
+    {
+      icon: FileText,
+      title: t("dropdownSchemes.eligibilityChecker"),
+      desc: t("dropdownSchemes.eligibilityCheckerDesc"),
+      path: "/schemes",
+    },
+    {
+      icon: CalendarDays,
+      title: t("dropdownSchemes.latestAnnouncements"),
+      desc: t("dropdownSchemes.latestAnnouncementsDesc"),
+      path: "/schemes",
+    },
+  ];
 
   if (isMobile) {
     return (
@@ -79,10 +81,10 @@ const DropdownSchemes = ({ isMobile }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          Government Schemes <span className="text-green-500">🏛️</span>
+          {t("dropdownSchemes.schemesHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          Discover agriculture welfare programs & financial support
+          {t("dropdownSchemes.schemesSub")}
         </p>
       </div>
 
@@ -117,4 +119,4 @@ const DropdownSchemes = ({ isMobile }) => {
   );
 };
 
-export default DropdownSchemes;
+export default DropdownSchemes;

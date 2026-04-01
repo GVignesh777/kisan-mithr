@@ -1,3 +1,5 @@
+import additionalTranslations from "./translations_patch";
+
 const translations = {
   en: {
     kisanMithr: "Kisan Mithr",
@@ -68,12 +70,30 @@ const translations = {
     filterByState: "Filter by State",
     nearMe: "Near Me",
     commodity: "Commodity (Variety)",
-    market: "Market",
+    marketLabel: "Market",
     minPrice: "Min Price (₹/Quintal)",
     maxPrice: "Max Price (₹/Quintal)",
     modalPrice: "Modal Price (₹/Quintal)",
     date: "Date",
     noMarketData: "No market data found for",
+    market: {
+      allStates: "All States",
+      allDistricts: "All Districts",
+      allMandis: "All Mandis",
+      standard: "Standard Filter",
+      scrollToTop: "Scroll to Top",
+      scrollToBottom: "Scroll to Bottom"
+    },
+    assistant: {
+      tapToBegin: "Tap to Begin",
+      empowering: "Empowering Indian Farmers with Intelligent Voice Assistance.",
+      heyKisan: "Hey Kisan",
+      listening: "Listening...",
+      thinking: "Understanding...",
+      speaking: "Speaking...",
+      aiPowered: "Professional Agritech Intelligence • AI Powered",
+      networkError: "I'm having trouble connecting. Please try again."
+    },
     
     navigationHome: "Home",
     navigationAbout: "About",
@@ -163,12 +183,30 @@ const translations = {
     filterByState: "राज्य द्वारा फ़िल्टर करें",
     nearMe: "मेरे पास",
     commodity: "वस्तु (किस्म)",
-    market: "मंडी",
+    marketLabel: "मंडी",
     minPrice: "न्यूनतम मूल्य (₹/क्विंटल)",
     maxPrice: "अधिकतम मूल्य (₹/क्विंटल)",
     modalPrice: "औसत मूल्य (₹/क्विंटल)",
     date: "तारीख",
     noMarketData: "के लिए कोई बाज़ार डेटा नहीं मिला",
+    market: {
+      allStates: "सभी राज्य",
+      allDistricts: "सभी जिले",
+      allMandis: "सभी मंडियां",
+      standard: "मानक फ़िल्टर",
+      scrollToTop: "ऊपर स्क्रॉल करें",
+      scrollToBottom: "नीचे स्क्रॉल करें"
+    },
+    assistant: {
+      tapToBegin: "शुरू करने के लिए टैप करें",
+      empowering: "बुद्धिमान वॉयस सहायता के साथ भारतीय किसानों को सशक्त बनाना।",
+      heyKisan: "हे किसान",
+      listening: "सुन रहा हूँ...",
+      thinking: "समझ रहा हूँ...",
+      speaking: "बोल रहा हूँ...",
+      aiPowered: "पेशेवर एग्रीटेक इंटेलिजेंस • एआई संचालित",
+      networkError: "मुझे कनेक्ट करने में समस्या हो रही है। कृपया पुनः प्रयास करें।"
+    },
 
     navigationHome: "होम",
     navigationAbout: "अबाउट",
@@ -258,12 +296,30 @@ const translations = {
     filterByState: "రాష్ట్రం ద్వారా ఫిల్టర్ చేయండి",
     nearMe: "నా దగ్గర",
     commodity: "కమోడిటీ (వెరైటీ)",
-    market: "మార్కెట్",
+    marketLabel: "మార్కెట్",
     minPrice: "కనిష్ట ధర (₹/క్వింటాల్)",
     maxPrice: "గరిష్ట ధర (₹/క్వింటాల్)",
     modalPrice: "సగటు ధర (₹/క్వింటాల్)",
     date: "తేదీ",
     noMarketData: "దీని కోసం ఎలాంటి మార్కెట్ డేటా కనుగొనబడలేదు",
+    market: {
+      allStates: "అన్ని రాష్ట్రాలు",
+      allDistricts: "అన్ని జిల్లాలు",
+      allMandis: "అన్ని మండీలు",
+      standard: "ప్రామాణిక ఫిల్టర్",
+      scrollToTop: "పైకి స్క్రోల్ చేయండి",
+      scrollToBottom: "క్రిందికి స్క్రోల్ చేయండి",
+    },
+    assistant: {
+      tapToBegin: "ప్రారంభించడానికి నొక్కండి",
+      empowering: "తెలివైన వాయిస్ అసిస్టెన్స్‌తో భారతీయ రైతులకు శక్తినివ్వడం.",
+      heyKisan: "హాయ్ కిసాన్",
+      listening: "వింటున్నాను...",
+      thinking: "అర్థం చేసుకుంటున్నాను...",
+      speaking: "మాట్లాడుతున్నాను...",
+      aiPowered: "ప్రొఫెషనల్ అగ్రిటెక్ ఇంటెలిజెన్స్ • AI పవర్డ్",
+      networkError: "కనెక్ట్ చేయడంలో సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నించండి."
+    },
 
     navigationHome: "హోమ్",
     navigationAbout: "మా గురించి",
@@ -284,5 +340,9 @@ const translations = {
     sendFeedback: "ఇప్పుడే సందేశం పంపండి"
   },
 };
+
+Object.assign(translations.en, additionalTranslations.en);
+Object.assign(translations.hi, additionalTranslations.hi);
+Object.assign(translations.te, additionalTranslations.te);
 
 export default translations;

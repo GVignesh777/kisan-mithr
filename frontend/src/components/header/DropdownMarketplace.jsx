@@ -8,48 +8,50 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const marketplaceItems = [
-  {
-    icon: Store,
-    title: "Sell Crops",
-    desc: "List your agricultural products directly",
-    path: "/buyer/market",
-  },
-  {
-    icon: ShoppingCart,
-    title: "Buy Crops",
-    desc: "Purchase fresh produce from farmers",
-    path: "/buyer/market",
-  },
-  {
-    icon: Package,
-    title: "Manage Inventory",
-    desc: "Track stock and product availability",
-    path: "/buyer/inventory",
-  },
-  {
-    icon: TrendingUp,
-    title: "Price Insights",
-    desc: "Analyze crop demand and pricing trends",
-    path: "/market",
-  },
-  {
-    icon: Truck,
-    title: "Order Tracking",
-    desc: "Monitor deliveries and logistics status",
-    path: "/buyer/orders",
-  },
-  {
-    icon: CreditCard,
-    title: "Secure Payments",
-    desc: "Safe and transparent transactions",
-    path: "/buyer/payments",
-  },
-];
+import useTranslation from "../../hooks/useTranslation";
 
 const DropdownMarketplace = ({ isMobile }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const marketplaceItems = [
+    {
+      icon: Store,
+      title: t("dropdownMarketplace.sellCrops"),
+      desc: t("dropdownMarketplace.sellCropsDesc"),
+      path: "/buyer/market",
+    },
+    {
+      icon: ShoppingCart,
+      title: t("dropdownMarketplace.buyCrops"),
+      desc: t("dropdownMarketplace.buyCropsDesc"),
+      path: "/buyer/market",
+    },
+    {
+      icon: Package,
+      title: t("dropdownMarketplace.manageInventory"),
+      desc: t("dropdownMarketplace.manageInventoryDesc"),
+      path: "/buyer/inventory",
+    },
+    {
+      icon: TrendingUp,
+      title: t("dropdownMarketplace.priceInsights"),
+      desc: t("dropdownMarketplace.priceInsightsDesc"),
+      path: "/market",
+    },
+    {
+      icon: Truck,
+      title: t("dropdownMarketplace.orderTracking"),
+      desc: t("dropdownMarketplace.orderTrackingDesc"),
+      path: "/buyer/orders",
+    },
+    {
+      icon: CreditCard,
+      title: t("dropdownMarketplace.securePayments"),
+      desc: t("dropdownMarketplace.securePaymentsDesc"),
+      path: "/buyer/payments",
+    },
+  ];
 
   if (isMobile) {
     return (
@@ -79,10 +81,10 @@ const DropdownMarketplace = ({ isMobile }) => {
       {/* Heading */}
       <div className="mb-6 border-b border-zinc-800/60 pb-4">
         <h2 className="text-xl font-bold text-zinc-100">
-          Marketplace <span className="text-green-500">🛒</span>
+          {t("dropdownMarketplace.marketplaceHeading")}
         </h2>
         <p className="text-sm text-zinc-400">
-          Connect farmers and buyers in a seamless digital market
+          {t("dropdownMarketplace.marketplaceSub")}
         </p>
       </div>
 
@@ -117,4 +119,4 @@ const DropdownMarketplace = ({ isMobile }) => {
   );
 };
 
-export default DropdownMarketplace;
+export default DropdownMarketplace;

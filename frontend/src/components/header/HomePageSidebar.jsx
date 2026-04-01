@@ -7,6 +7,7 @@ import DropdownFeature from "./DropdownFeature";
 import DropdownMarketplace from "./DropdownMarketplace";
 import DropdownSchemes from "./DropdownSchemes";
 import DropdownContact from "./DropdownContact";
+import LanguageSwitcher from "../../pages/more-section/LanguageSwitcher";
 
 const HomePageSidebar = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
@@ -153,6 +154,15 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
               )}
             </div>
             
+            {/* LANGUAGE SWITCHER MOBILE */}
+            <div className="pt-6 mt-6 border-t border-zinc-800">
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-4 px-2">
+                {t("footer.language") || "Language"}
+              </p>
+              <div className="px-2">
+                <LanguageSwitcher scrolled={true} />
+              </div>
+            </div>
           </nav>
         </div>
       </div>
