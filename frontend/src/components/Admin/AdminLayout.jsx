@@ -143,10 +143,14 @@ const AdminLayout = () => {
           <div className="flex items-center gap-4 group cursor-pointer" onClick={() => { navigate('/admin-dashboard'); if (isMobile) setIsSidebarOpen(false); }}>
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
               {/* <span className="font-black text-2xl text-white italic">K</span> */}
-              <img src="logo1" alt="" />
+              {logo1 ? (
+                <img src={logo1} />
+              ) : (
+                <span className="font-black text-2xl text-white italic">K</span>
+              )}
             </div>
             <div>
-              <h2 className="font-black text-xl tracking-tight leading-none text-white">KISAN</h2>
+              <h2 className="font-black text-xl tracking-tight leading-none text-white">KISAN MITHR</h2>
               <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-400 mt-1">Admin Portal</p>
             </div>
           </div>

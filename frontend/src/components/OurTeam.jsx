@@ -138,7 +138,7 @@ const OurTeam = () => {
       description:
         t("ourTeam.rahulDesc") ||
         "Specializes in scalable cloud infrastructure and high-performance API design.",
-      skills: ["Node.js", "Express", "MongoDB", "Redis", "Docker", "AWS"],
+      skills: ["Node.js", "Express", "MongoDB"],
       socials: {
         linkedin: "#",
         github: "#",
@@ -153,11 +153,10 @@ const OurTeam = () => {
         t("ourTeam.ananyaDesc") ||
         "Crafting intuitive digital experiences that simplify agriculture for everyone.",
       skills: [
-        "Figma",
-        "Adobe XD",
+        "Php",
+        "MongoDB",
         "Prototyping",
         "Design Systems",
-        "Framermotion",
       ],
       socials: {
         linkedin: "#",
@@ -172,13 +171,32 @@ const OurTeam = () => {
       description:
         t("ourTeam.arjunDesc") ||
         "Building intelligent models for crop disease detection and yield prediction.",
-      skills: ["Python", "TensorFlow", "PyTorch", "Computer Vision", "NLP"],
+      skills: ["Python", "Computer Vision", "NLP"],
       socials: {
         linkedin: "#",
         github: "#",
         email: "arjun@kisanmithr.com",
       },
       image: null,
+    },
+    {
+      name: "Siddhartha",
+      role: t("ourTeam.siddharthaRole") || "Frontend Developer",
+      badge: t("ourTeam.siddharthaBadge") || "Founder",
+      description:
+        t("ourTeam.siddharthaDesc") ||
+        "Passionate about building modern, responsive, and user-friendly web applications.",
+      skills: [
+        "HTML",
+        "JavaScript",
+        "CSS",,
+      ],
+      socials: {
+        linkedin: "#",
+        github: "#",
+        email: "[EMAIL_ADDRESS]",
+      },
+      image: null, // Placeholder will show initial 'V'
     },
   ];
 
