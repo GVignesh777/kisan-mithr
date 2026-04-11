@@ -181,10 +181,9 @@ const OurTeam = () => {
     },
     {
       name: "Siddhartha",
-      role: t("ourTeam.siddharthaRole") || "Frontend Developer",
-      badge: t("ourTeam.siddharthaBadge") || "Founder",
+      role: "Advisor",
       description:
-        t("ourTeam.siddharthaDesc") ||
+        t("ourTeam.vigneshDesc") ||
         "Passionate about building modern, responsive, and user-friendly web applications.",
       skills: [
         "HTML",
