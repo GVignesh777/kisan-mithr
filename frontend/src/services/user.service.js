@@ -90,7 +90,7 @@ export const selectRole = async (role) => {
     const response = await axiosInstance.post('/selectRole', { role });
     console.log("triggering select role...");
     return response.data;
-  } 
+  }
   catch (error) {
     throw error.response ? error.response.data : error.message;
   }
@@ -113,11 +113,22 @@ export const checkUserAuth = async () => {
 
 
 export const logoutUser = async () => {
-    try {
-        localStorage.removeItem("auth_token"); // Clear token
-        const response = await axiosInstance.get('/logout');
-        return response.data;
-    } catch (error) {
-        throw error.response ? error.response.data : error.message;
-    }
+  try {
+    localStorage.removeItem("auth_token"); // Clear token
+    const response = await axiosInstance.get('/logout');
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error.message;
+  }
+}
+
+export const allUsers = async () => {
+  try {
+    const response = await axiosInstance.get('/allUsers');
+    // if (response?.data?.status = 'success') {
+      return { user: response.data.data };
+    // }
+  } catch (error) {
+    throw error.response ? error.response.data : error.message;
+  }
 }

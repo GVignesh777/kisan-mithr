@@ -24,6 +24,8 @@ router.post("/resetPassword/:token", resetRouter.resetPassword);
 
 router.put('/updateProfile', authmiddleware, multerMiddleware, registerColtroller.updateProfile);
 router.get('/check-auth', authmiddleware, registerColtroller.checkAuthenticated);
+
+router.get('/allUsers', authmiddleware, registerColtroller.getAllUsers);
 // router.get('/check-google-auth', authMiddleware, checkGoogleAuthenticated);
 
 module.exports = router;

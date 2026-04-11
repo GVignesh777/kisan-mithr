@@ -127,10 +127,12 @@ const updateProfile = async (req, res) => {
 
         // Fallback: lookup by email (handles edge cases with Google OAuth tokens)
         if (!user && req.body.email) {
-            user = await User.findOne({ $or: [
-                { email: req.body.email },
-                { googleMail: req.body.email }
-            ]});
+            user = await User.findOne({
+                $or: [
+                    { email: req.body.email },
+                    { googleMail: req.body.email }
+                ]
+            });
             console.log('[updateProfile] Fallback email lookup result:', user?._id);
         }
 
@@ -216,6 +218,17 @@ const logout = (req, res) => {
     }
 }
 
+const getAllUsers = async (req, res) => {
+    try {
+        // Return all users for admin or general listing, excluding sensitive fields
+        const users = await User.find({}).select("-password -emailOtp -emailOtpExpiry");
+        return response(res, 200, 'All Users Data', users);
+    } catch (error) {
+        console.error(error);
+        return response(res, 500, "Internal server error");
+    }
+}
+
 module.exports = {
     registerUser,
     verifyOtp,
@@ -223,4 +236,5 @@ module.exports = {
     selectRole,
     checkAuthenticated,
     logout,
+    getAllUsers,
 }

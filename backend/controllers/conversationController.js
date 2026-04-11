@@ -1,5 +1,7 @@
 const Conversation = require("../models/Conversation");
 const response = require("../utils/responseHandler");
+const mongoose = require("mongoose");
+const User = require('../models/User');
 
 
 // to create new conversation
@@ -9,7 +11,7 @@ const createNewConversation = async (req, res) => {
         console.log(`[DB] Creating conversation for userId: ${userId} (Length: ${userId?.length})`);
 
         const conversation = await Conversation.create({
-            userId,
+            userId: userId,
             messages: []
         });
         console.log(`[DB] Successfully created conversation: ${conversation._id}`);
@@ -65,10 +67,10 @@ const addMessageInternal = async ({ conversationId, role, content }) => {
 const addMessageToConversation = async (req, res) => {
     try {
         const { conversationId, role, content } = req.body;
-        
+
         // Use normalized role names
         const normalizedRole = role === 'ai' || role === 'assistant' ? 'assistant' : 'user';
-        
+
         const conversation = await addMessageInternal({ conversationId, role: normalizedRole, content });
 
         res.status(200).json({

@@ -3,7 +3,7 @@ const Conversation = require('../../models/Conversation');
 const getConversations = async (req, res) => {
   try {
     const conversations = await Conversation.find({})
-      .populate('userId', 'name phone email')
+      .populate('userId', 'username googleName email profilePicture')
       .sort({ updatedAt: -1 });
     res.json(conversations);
   } catch (error) {
