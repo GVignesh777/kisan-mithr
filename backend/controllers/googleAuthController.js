@@ -40,10 +40,11 @@ const googleAuthController = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("auth_token", jwtToken, {
       httpOnly: true,
-      secure: false, // true in production (https)
-      sameSite: "lax",
+      secure: isProduction,        // true in production (HTTPS), false in localhost
+      sameSite: isProduction ? "none" : "lax",  // "none" required for cross-origin (Vercel → Render)
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 

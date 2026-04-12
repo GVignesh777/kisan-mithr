@@ -31,11 +31,12 @@ const loginUser = async (req, res) => {
     };
 
     const token = generateToken(user?._id);
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: false,      // true only in production with HTTPS
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: isProduction,        // true in production (HTTPS), false in localhost
+      sameSite: isProduction ? "none" : "lax",  // "none" required for cross-origin (Vercel → Render)
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     // return response(res, 200, "Login Successfull!!!", { email });
