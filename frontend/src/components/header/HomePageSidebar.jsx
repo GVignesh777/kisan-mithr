@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Bot, LayoutDashboard } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import useTranslation from "../../hooks/useTranslation";
 import DropdownHome from "./DropdownHome";
 import DropdownAbout from "./DropdownAbout";
@@ -12,6 +13,12 @@ import LanguageSwitcher from "../../pages/more-section/LanguageSwitcher";
 const HomePageSidebar = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const [openSection, setOpenSection] = useState("");
+  const navigate = useNavigate();
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    onClose();
+  };
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? "" : section);
@@ -58,6 +65,29 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
           </div>
 
           <nav className="flex flex-col space-y-2">
+            {/* Assistant & Analytics */}
+            <div className="flex flex-col gap-2 border-b border-zinc-800/50 pb-4 mb-2">
+              <button
+                onClick={() => handleNavigation("/assistant")}
+                className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-all group"
+              >
+                <div className="p-2 bg-zinc-800 rounded-xl group-hover:bg-zinc-700">
+                  <Bot size={20} className="text-cyan-400" />
+                </div>
+                <span className="font-medium text-lg">{t("navigationAssistant")}</span>
+              </button>
+              
+              <button
+                onClick={() => handleNavigation("/analytics-growth")}
+                className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-all group"
+              >
+                <div className="p-2 bg-zinc-800 rounded-xl group-hover:bg-zinc-700">
+                  <LayoutDashboard size={20} className="text-indigo-400" />
+                </div>
+                <span className="font-medium text-lg">Analytics</span>
+              </button>
+            </div>
+
             {/* HOME */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2">
               <button 

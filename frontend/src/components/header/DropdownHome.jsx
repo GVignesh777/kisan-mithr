@@ -37,7 +37,7 @@ const DropdownHome = ({ isMobile }) => {
       icon: BarChart3,
       title: t("dropdownHome.analyticsGrowth"),
       desc: t("dropdownHome.analyticsGrowthDesc"),
-      path: "/buyer", // Redirect to buyer dashboard for analytics
+      path: "/analytics-growth", // Redirect to buyer dashboard for analytics
     },
     {
       icon: Users,

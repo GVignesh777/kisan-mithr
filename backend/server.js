@@ -61,6 +61,9 @@ app.use("/api/admin/auth", adminAuthRoutes);
 const adminRoutes = require("./routes/admin/adminRoutes");
 app.use("/api/admin", adminRoutes);
 
+const analyticsRoutes = require("./routes/analyticsRoutes");
+app.use("/api/analytics", analyticsRoutes);
+
 const startMarketPriceCron = require("./cron/marketPriceCron.js");
 
 

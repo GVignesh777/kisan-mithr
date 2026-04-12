@@ -155,6 +155,20 @@ export default function Header() {
             <DropdownSchemes />
           </div>
 
+          {/* ANALYTICS & GROWTH */}
+          {/* <div className="relative group">
+            <a
+              href="/analytics-growth"
+              className={`transition-all duration-300 text-sm font-medium tracking-wide px-4 py-2 rounded-full ${
+                scrolled
+                  ? "text-zinc-300 hover:text-white hover:bg-zinc-800/80"
+                  : "text-zinc-200 hover:text-white hover:bg-black/40"
+              }`}
+            >
+              Analytics
+            </a>
+          </div> */}
+
           {/* CONTACT */}
           <div className="relative group">
             <a
