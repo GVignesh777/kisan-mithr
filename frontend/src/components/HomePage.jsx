@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "./header/Header";
 import heroBG from "../assets/hero-bg.jpg";
 import useTranslation from "../hooks/useTranslation";
-import { Mic, CloudSun, LineChart, Leaf, ArrowRight, MessageSquare, Send, User, Mail, Bot } from "lucide-react";
+import { Mic, CloudSun, LineChart, Leaf, ArrowRight, MessageSquare, Send, User, Mail, Bot, Calculator } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import useUserStore from "../store/useUserStore";
@@ -121,7 +121,7 @@ const HomePage = () => {
           <p className="text-zinc-400 max-w-2xl mx-auto text-lg">{t("integratedTools")}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
               title: t("aiVoiceAssistant"),
@@ -153,6 +153,12 @@ const HomePage = () => {
               desc: "Professional orbital telemetry and environmental analytics for your farm.",
               icon: <Bot className="w-8 h-8 text-cyan-400" />,
               link: "/satellite-cockpit",
+            },
+            {
+              title: "Pesticide Calculator",
+              desc: "Smart calculator to find exact pesticide amounts required for your lands.",
+              icon: <Calculator className="w-8 h-8 text-emerald-300" />,
+              link: "/pesticide-calc",
             }
           ].map((feature, idx) => (
             <div 

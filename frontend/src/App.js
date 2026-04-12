@@ -32,6 +32,7 @@ const FarmProfileForm = React.lazy(() => import("./pages2/FarmProfile/FarmProfil
 const LivestockGuide = React.lazy(() => import("./pages2/Livestock/LivestockGuide"));
 const GovSchemes = React.lazy(() => import("./pages2/GovSchemes/GovSchemes"));
 const SatelliteHealthCockpit = React.lazy(() => import("./pages2/CropHealth/SatelliteHealthCockpit"));
+const PesticideCalculator = React.lazy(() => import("./pages2/PesticideCalc/PesticideCalculator"));
 const Role = React.lazy(() => import("./components/Role"));
 const ErrorPage = React.lazy(() => import("./components/ErrorPage"));
 
@@ -161,6 +162,7 @@ const App = () => {
                 <Route path="/farm-profile" element={<FarmProfileForm />} />
                 <Route path="/livestock" element={<LivestockGuide />} />
                 <Route path="/schemes" element={<GovSchemes />} />
+                <Route path="/pesticide-calc" element={<PesticideCalculator />} />
               </Route>
 
             {/* 🛒 Buyer Specific Routes */}
