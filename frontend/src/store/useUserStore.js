@@ -6,10 +6,12 @@ const useUserStore = create(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      setUser: (userData) => set({ user: userData, isAuthenticated: true }),
+      isAuthChecked: false, // New state
+      setUser: (userData) => set({ user: userData, isAuthenticated: true, isAuthChecked: true }),
+      setAuthChecked: (status) => set({ isAuthChecked: status }),
       clearUser: () => {
         localStorage.removeItem("auth_token");
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false, isAuthChecked: true });
       },
     }),
     {

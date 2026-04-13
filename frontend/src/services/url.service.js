@@ -28,10 +28,6 @@ axiosInstance.interceptors.response.use(
         if (error.response?.status === 401) {
             console.warn("Unauthorized access - clearing stale token");
             localStorage.removeItem("auth_token");
-            // Optional: redirect to login if not already there
-            if (window.location.pathname !== '/user-login') {
-                window.location.href = '/user-login';
-            }
         }
         return Promise.reject(error);
     }

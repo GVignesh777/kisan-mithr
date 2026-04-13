@@ -11,27 +11,26 @@ import Loader from "./utils/loader";
  */
 export const ProtectedRoute = () => {
     const location = useLocation();
-    const { isAuthenticated, user, setUser, clearUser } = useUserStore();
-    const [isChecking, setIsChecking] = useState(true);
+    const { isAuthenticated, isAuthChecked, user, setUser, clearUser, setAuthChecked } = useUserStore();
 
     useEffect(() => {
-        // If already authenticated, skip the server round-trip entirely.
-        // This prevents race conditions after login.
-        if (isAuthenticated) {
-            setIsChecking(false);
+        // 1. If we are on the login page, don't trigger a recursive check
+        if (location.pathname === "/user-login") {
+            setAuthChecked(true);
             return;
         }
 
-        // We are NOT authenticated locally. Check if we have a token in storage.
+        // 2. If already checked or authenticated, stop
+        if (isAuthChecked || isAuthenticated) return;
+
+        // 3. Check for local token existence
         const hasToken = !!localStorage.getItem('auth_token');
         if (!hasToken) {
-            // No token at all — immediately mark as done (will redirect to login).
-            setIsChecking(false);
+            setAuthChecked(true);
             return;
         }
 
-        // We have a token but store says not authenticated (e.g. page was hard-refreshed
-        // but persist failed). Try to verify against the server.
+        // 4. Verify with server
         let isMounted = true;
         
         const verifyAuth = async () => {
@@ -48,7 +47,7 @@ export const ProtectedRoute = () => {
                 console.error("Auth verification failed:", error);
                 if (isMounted) clearUser();
             } finally {
-                if (isMounted) setIsChecking(false);
+                if (isMounted) setAuthChecked(true);
             }
         };
 
@@ -56,13 +55,15 @@ export const ProtectedRoute = () => {
         
         return () => { isMounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);  // Run only once on mount — we don't want re-runs on store changes
+    }, [location.pathname, isAuthenticated, isAuthChecked]);
 
-    if (isChecking && !isAuthenticated) {
+    // SHOW LOADER while checking
+    if (!isAuthChecked && !isAuthenticated) {
         return <Loader />;
     }
 
-    if (!isAuthenticated) {
+    // REDIRECT TO LOGIN if not authenticated
+    if (!isAuthenticated && location.pathname !== "/user-login") {
         return <Navigate to="/user-login" state={{ from: location }} replace />;
     }
 
