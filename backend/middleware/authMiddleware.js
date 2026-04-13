@@ -19,7 +19,22 @@ const authMiddleware = (req, res, next) => {
         next();
     } catch (error) {
         console.error("JWT Verification Error:", error.message);
-        return response(res, 401, "Invalid or expired token");
+
+        // Define cookie options for clearing (must match the options used when setting)
+        const isProduction = process.env.NODE_ENV === "production";
+        const cookieOptions = {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+        };
+
+        if (error.name === "TokenExpiredError") {
+            res.clearCookie("auth_token", cookieOptions);
+            return response(res, 401, "Token expired, please login again");
+        }
+
+        res.clearCookie("auth_token", cookieOptions);
+        return response(res, 401, "Invalid token or session expired");
     }
 }
 

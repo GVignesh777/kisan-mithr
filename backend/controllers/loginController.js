@@ -36,7 +36,7 @@ const loginUser = async (req, res) => {
       httpOnly: true,
       secure: isProduction,        // true in production (HTTPS), false in localhost
       sameSite: isProduction ? "none" : "lax",  // "none" required for cross-origin (Vercel → Render)
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (adjusted for balance between security and UX)
     });
 
     // return response(res, 200, "Login Successfull!!!", { email });

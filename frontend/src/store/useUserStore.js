@@ -7,7 +7,10 @@ const useUserStore = create(
       user: null,
       isAuthenticated: false,
       setUser: (userData) => set({ user: userData, isAuthenticated: true }),
-      clearUser: () => set({ user: null, isAuthenticated: false }),
+      clearUser: () => {
+        localStorage.removeItem("auth_token");
+        set({ user: null, isAuthenticated: false });
+      },
     }),
     {
       name: "user-storage",

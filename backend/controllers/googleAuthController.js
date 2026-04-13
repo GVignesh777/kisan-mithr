@@ -39,7 +39,7 @@ const googleAuthController = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
-
+    
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("auth_token", jwtToken, {
       httpOnly: true,

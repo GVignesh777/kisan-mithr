@@ -90,10 +90,11 @@ const verifyOtp = async (req, res) => {
             console.log("enter the email and password");
         }
         const token = generateToken(user?._id);
+        const isProduction = process.env.NODE_ENV === "production";
         res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: false,      // true only in production with HTTPS
-            sameSite: "lax",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         console.log("token in register controll:", token);
@@ -210,7 +211,12 @@ const checkAuthenticated = async (req, res) => {
 
 const logout = (req, res) => {
     try {
-        res.cookie("auth_token", "", { expires: new Date(0) });
+        const isProduction = process.env.NODE_ENV === "production";
+        res.clearCookie("auth_token", {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+        });
         return response(res, 200, "user logout successfully");
     } catch (error) {
         console.error(error);
