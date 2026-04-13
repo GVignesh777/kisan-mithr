@@ -26,7 +26,7 @@ axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            console.warn("Unauthorized access - clearing stale token");
+            console.warn("Unauthorized access - user not logged in");
             localStorage.removeItem("auth_token");
         }
         return Promise.reject(error);

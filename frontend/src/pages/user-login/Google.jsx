@@ -2,6 +2,7 @@ import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "../../store/useUserStore";
+import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import { googleLogin } from "../../services/user.service";
 
@@ -9,6 +10,7 @@ const Google = () => {
   // ⚠️ Make sure this variable name is EXACT
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const { setUser } = useUserStore();
+  const { checkAuth } = useAuth();
   const navigate = useNavigate();
   const [, setLoading] = useState(false);
 
@@ -45,6 +47,7 @@ const Google = () => {
         localStorage.setItem("auth_token", response.token); // Save token
         toast.success("Logged in successfully with Google");
         setUser(response.data);
+        await checkAuth(); // Refresh global auth state
         navigate("/");
       } else {
         toast.error("Failed to login with Google");

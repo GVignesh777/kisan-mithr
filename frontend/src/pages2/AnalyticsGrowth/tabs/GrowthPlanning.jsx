@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../../../services/url.service';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 import DataFormModal from '../components/DataFormModal';
 import SimulationModal from '../components/SimulationModal';
 
@@ -34,7 +34,7 @@ const GrowthPlanning = ({ onRefresh }) => {
     setIsModalOpen(true);
   };
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   const fetchData = async () => {
     if (!user) return; // 🚫 Prevent calling API if not logged in

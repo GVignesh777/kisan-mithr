@@ -4,6 +4,7 @@ import { FileDown, FileText, Calendar, CheckSquare, Download, Loader2 } from 'lu
 
 import { toast } from 'react-toastify';
 import axiosInstance from '../../../services/url.service';
+import { useAuth } from '../../../context/AuthContext';
 import { exportToCSV, exportToTXT, exportToPDF } from '../../../utils/exportUtils';
 
 
@@ -12,10 +13,12 @@ const ReportsExport = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({ yields: [], expenses: [] });
   const [reportType, setReportType] = useState('Comprehensive Seasonal Summary');
+  const { user } = useAuth();
 
   useEffect(() => {
 
     const fetchData = async () => {
+      if (!user) return; // 🚫 Block API if not logged in
       try {
         const [yieldRes, expenseRes] = await Promise.all([
           axiosInstance.get('/analytics/yields'),
@@ -29,8 +32,10 @@ const ReportsExport = () => {
         console.error("Fetch error for reports:", err);
       }
     };
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleExport = (format) => {
     setLoading(true);

@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { IndianRupee, TrendingUp, Wallet, ArrowRightCircle, Plus, Download, FileText } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 import { exportToCSV, exportToTXT, exportToPDF } from '../../../utils/exportUtils';
 
 import { toast } from 'react-toastify';
@@ -33,7 +33,7 @@ const ProfitExpenses = ({ overviewData, loading: globalLoading, onRefresh }) => 
     toast.success("Report downloaded successfully.");
   };
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchTrends = async () => {

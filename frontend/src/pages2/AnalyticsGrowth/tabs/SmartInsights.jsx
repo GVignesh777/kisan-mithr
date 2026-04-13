@@ -13,7 +13,7 @@ import {
 import axiosInstance from '../../../services/url.service';
 import { motion } from 'framer-motion';
 import DataFormModal from '../components/DataFormModal';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 
 const SmartInsights = ({ onRefresh }) => {
   const [insights, setInsights] = useState(null);
@@ -29,7 +29,7 @@ const SmartInsights = ({ onRefresh }) => {
   };
 
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   const fetchInsights = async () => {
     if (!user) return; // 🚫 Prevent calling API if not logged in

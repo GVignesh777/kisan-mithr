@@ -5,14 +5,14 @@ import {
 import { Wheat, Leaf, Sprout, Combine, PlusCircle } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 
 const CropAnalytics = ({ overviewData, loading: globalLoading, onRefresh }) => {
   const [yieldData, setYieldData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchYieldData = async () => {

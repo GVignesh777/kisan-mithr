@@ -5,18 +5,18 @@ import {
 import { Sprout, TrendingUp, CircleDollarSign, Activity, ArrowUpRight, ArrowDownRight, PlusCircle, LayoutGrid, CreditCard } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 
 const OverviewDashboard = ({ overviewData, loading, onRefresh }) => {
   const [trends, setTrends] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('farm');
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchTrends = async () => {
-      if (!user) return; // 🚫 Prevent calling API if not logged in
+      if (!user) return; // 🚫 Block API if not logged in
 
       try {
         const res = await axiosInstance.get('/analytics/financial-trends');

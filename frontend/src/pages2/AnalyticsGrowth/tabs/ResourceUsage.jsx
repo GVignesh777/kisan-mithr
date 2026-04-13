@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Droplet, Leaf, Bug, Activity } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
-import useUserStore from '../../../store/useUserStore';
+import { useAuth } from '../../../context/AuthContext';
 
 const ResourceUsage = ({ overviewData, loading: globalLoading }) => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { user } = useUserStore();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchResources = async () => {

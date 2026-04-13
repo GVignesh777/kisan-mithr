@@ -21,6 +21,7 @@ import useUserStore from "../../store/useUserStore";
 import ForgotPasswordHTML from "./ForgotPass";
 import LanguageSwitcher from "../more-section/LanguageSwitcher";
 import useTranslation from "../../hooks/useTranslation";
+import { useAuth } from "../../context/AuthContext";
 
 // Validation Schema
 
@@ -71,6 +72,7 @@ const Login = () => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState(avatars[0]);
+  const { checkAuth } = useAuth();
   const { t } = useTranslation();
 
   const {
@@ -140,6 +142,7 @@ const Login = () => {
             navigate("/role");
           }
           
+          await checkAuth(); // Refresh global auth state
           resetLoginState();
         } else {
           toast.error(response?.message || "Login failed");
@@ -209,6 +212,7 @@ const Login = () => {
           setUser(user);
           toast.success("Welcome back...");
           navigate("/role");
+          await checkAuth(); // Refresh global auth state
           resetLoginState();
         } else {
           setStep(3);
@@ -260,6 +264,7 @@ const Login = () => {
 
       toast.success(`Welcome back, ${data.username}`);
       navigate("/role");
+      await checkAuth(); // Refresh global auth state
       resetLoginState();
     } catch (error) {
       console.log(error);

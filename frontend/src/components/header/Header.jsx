@@ -1,7 +1,7 @@
 import logo from "../../assets/logo.jpg";
 import { useEffect, useState } from "react";
 import useUserStore from "../../store/useUserStore";
-import { checkUserAuth } from "../../services/user.service";
+import { useAuth } from "../../context/AuthContext";
 import LanguageSwitcher from "../../pages/more-section/LanguageSwitcher";
 import DropdownFeature from "./DropdownFeature";
 import DropdownHome from "./DropdownHome";
@@ -16,8 +16,7 @@ import { useLocation } from "react-router-dom";
 import HomePageSidebar from "./HomePageSidebar";
 
 export default function Header() {
-  const userStore = useUserStore();
-  const userData = userStore?.user;
+  const { user: userData } = useAuth();
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,21 +28,6 @@ export default function Header() {
   
   const userName = userData?.username || userData?.googleName || t("header.guest");
   const profilePic = userData?.profilePicture || userData?.googlePhoto;
-
-  const getUser = async () => {
-    try {
-      const response = await checkUserAuth();
-      if (response?.user) {
-        userStore.setUser(response.user);
-      }
-    } catch (error) {
-      console.log("User not found ///");
-    }
-  };
-
-  useEffect(() => {
-    getUser();
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

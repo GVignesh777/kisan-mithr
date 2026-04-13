@@ -14,9 +14,8 @@ import {
 import Header from "../../components/header/Header";
 import Footer from "../../components/Footer";
 
-// Lazy loading tabs for performance
 import axiosInstance from '../../services/url.service';
-import useUserStore from '../../store/useUserStore';
+import { useAuth } from '../../context/AuthContext';
 const OverviewDashboard = React.lazy(() => import('./tabs/OverviewDashboard'));
 const CropAnalytics = React.lazy(() => import('./tabs/CropAnalytics'));
 const ProfitExpenses = React.lazy(() => import('./tabs/ProfitExpenses'));
@@ -28,10 +27,12 @@ const ReportsExport = React.lazy(() => import('./tabs/ReportsExport'));
 
 const AnalyticsGrowth = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { user } = useUserStore();
+  const { user } = useAuth();
+  const [overviewData, setOverviewData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchOverview = async () => {
-    if (!user) return; // 🚫 Prevent calling API if not logged in
+    if (!user) return; // 🚫 Block API if not logged in
 
     try {
       setLoading(true);

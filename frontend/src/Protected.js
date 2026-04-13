@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useUserStore from "./store/useUserStore";
-import { checkUserAuth } from "./services/user.service";
+import { useAuth } from "./context/AuthContext";
 import Loader from "./utils/loader";
 
 /**
@@ -11,64 +11,20 @@ import Loader from "./utils/loader";
  */
 export const ProtectedRoute = () => {
     const location = useLocation();
-    const { isAuthenticated, isAuthChecked, user, setUser, clearUser, setAuthChecked } = useUserStore();
-
-    useEffect(() => {
-        // 1. If we are on the login page, don't trigger a recursive check
-        if (location.pathname === "/user-login") {
-            setAuthChecked(true);
-            return;
-        }
-
-        // 2. If already checked or authenticated, stop
-        if (isAuthChecked || isAuthenticated) return;
-
-        // 3. Check for local token existence
-        const hasToken = !!localStorage.getItem('auth_token');
-        if (!hasToken) {
-            setAuthChecked(true);
-            return;
-        }
-
-        // 4. Verify with server
-        let isMounted = true;
-        
-        const verifyAuth = async () => {
-            try {
-                const result = await checkUserAuth();
-                if (isMounted) {
-                    if (result?.isAuthenticated) {
-                        setUser(result.user);
-                    } else {
-                        clearUser();
-                    }
-                }
-            } catch (error) {
-                console.error("Auth verification failed:", error);
-                if (isMounted) clearUser();
-            } finally {
-                if (isMounted) setAuthChecked(true);
-            }
-        };
-
-        verifyAuth();
-        
-        return () => { isMounted = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname, isAuthenticated, isAuthChecked]);
+    const { user, authChecked } = useAuth();
 
     // SHOW LOADER while checking
-    if (!isAuthChecked && !isAuthenticated) {
+    if (!authChecked) {
         return <Loader />;
     }
 
     // REDIRECT TO LOGIN if not authenticated
-    if (!isAuthenticated && location.pathname !== "/user-login") {
+    if (!user && location.pathname !== "/user-login") {
         return <Navigate to="/user-login" state={{ from: location }} replace />;
     }
 
     // AUTHENTICATED BUT NO ROLE (and not already on role selection page)
-    if (!user?.role && location.pathname !== "/role") {
+    if (user && !user.role && location.pathname !== "/role") {
         return <Navigate to="/role" replace />;
     }
 
@@ -80,7 +36,7 @@ export const ProtectedRoute = () => {
  * Redirects unauthorized users to their authorized dashboards.
  */
 export const RoleGuard = ({ allowedRoles }) => {
-    const { user } = useUserStore();
+    const { user } = useAuth();
     const userRole = useMemo(() => user?.role?.toLowerCase(), [user?.role]);
 
     if (!userRole) {
@@ -108,10 +64,11 @@ export const RoleGuard = ({ allowedRoles }) => {
  * PublicRoute: Prevents logged-in users from accessing login/register pages.
  */
 export const PublicRoute = () => {
-    const isAuthenticated = useUserStore((state) => state.isAuthenticated);
-    const { user } = useUserStore();
+    const { user, authChecked } = useAuth();
 
-    if (isAuthenticated) {
+    if (!authChecked) return <Loader />;
+
+    if (user) {
         // If logged in, redirect away from public pages to their respective dashboards
         const role = user?.role?.toLowerCase();
         if (role === 'admin') return <Navigate to="/admin-dashboard" replace />;
