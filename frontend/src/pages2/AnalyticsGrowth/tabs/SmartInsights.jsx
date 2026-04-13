@@ -13,6 +13,7 @@ import {
 import axiosInstance from '../../../services/url.service';
 import { motion } from 'framer-motion';
 import DataFormModal from '../components/DataFormModal';
+import useUserStore from '../../../store/useUserStore';
 
 const SmartInsights = ({ onRefresh }) => {
   const [insights, setInsights] = useState(null);
@@ -28,7 +29,11 @@ const SmartInsights = ({ onRefresh }) => {
   };
 
 
+  const { user } = useUserStore();
+
   const fetchInsights = async () => {
+    if (!user) return; // 🚫 Prevent calling API if not logged in
+
     try {
       setLoading(true);
       setError(null);
@@ -36,6 +41,7 @@ const SmartInsights = ({ onRefresh }) => {
       setInsights(res.data.data.insights);
       setTimestamp(res.data.data.timestamp);
     } catch (err) {
+      if (err.response?.status === 401) return; // 🔇 Silent fail
       console.error("Error fetching AI insights:", err);
       // More specific error message if it's a data completeness issue
       setError("Not enough data to generate real-time AI insights.");
@@ -45,8 +51,10 @@ const SmartInsights = ({ onRefresh }) => {
   };
 
   useEffect(() => {
-    fetchInsights();
-  }, []);
+    if (user) {
+      fetchInsights();
+    }
+  }, [user]);
 
   const getSeverityStyles = (severity) => {
     const s = severity?.toLowerCase();

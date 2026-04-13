@@ -5,23 +5,32 @@ import {
 import { Sprout, TrendingUp, CircleDollarSign, Activity, ArrowUpRight, ArrowDownRight, PlusCircle, LayoutGrid, CreditCard } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
+import useUserStore from '../../../store/useUserStore';
 
 const OverviewDashboard = ({ overviewData, loading, onRefresh }) => {
   const [trends, setTrends] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('farm');
 
+  const { user } = useUserStore();
+
   useEffect(() => {
     const fetchTrends = async () => {
+      if (!user) return; // 🚫 Prevent calling API if not logged in
+
       try {
         const res = await axiosInstance.get('/analytics/financial-trends');
         setTrends(res.data.data);
       } catch (error) {
+        if (error.response?.status === 401) return; // 🔇 Silent fail
         console.error("Trends error:", error);
       }
     };
-    fetchTrends();
-  }, []);
+    
+    if (user) {
+      fetchTrends();
+    }
+  }, [user]);
 
   const openForm = (type) => {
     setModalType(type);
@@ -162,31 +171,33 @@ const OverviewDashboard = ({ overviewData, loading, onRefresh }) => {
               </div>
             </div>
           </div>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-              <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-
-                <defs>
-                  <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.3} />
-                <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val>=1000 ? val/1000+'k' : val}`} />
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                />
-                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
-                <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-[350px] w-full" style={{ minHeight: "350px" }}>
+            {trends && trends.length > 0 && (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+  
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="month" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val>=1000 ? val/1000+'k' : val}`} />
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                  <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

@@ -5,26 +5,35 @@ import {
 import { Wheat, Leaf, Sprout, Combine, PlusCircle } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
+import useUserStore from '../../../store/useUserStore';
 
 const CropAnalytics = ({ overviewData, loading: globalLoading, onRefresh }) => {
   const [yieldData, setYieldData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const { user } = useUserStore();
+
   useEffect(() => {
     const fetchYieldData = async () => {
+      if (!user) return; // 🚫 Prevent calling API if not logged in
+
       try {
         setLoading(true);
         const res = await axiosInstance.get('/analytics/yields');
         setYieldData(res.data.data);
       } catch (error) {
+        if (error.response?.status === 401) return; // 🔇 Silent fail
         console.error("Yield fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchYieldData();
-  }, []);
+    
+    if (user) {
+      fetchYieldData();
+    }
+  }, [user]);
 
   if (globalLoading || loading) {
     return (
@@ -92,9 +101,9 @@ const CropAnalytics = ({ overviewData, loading: globalLoading, onRefresh }) => {
           </div>
         </div>
         
-        <div className="h-[350px] w-full mt-4">
-          {yieldData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
+        <div className="h-[350px] w-full mt-4" style={{ minHeight: "350px" }}>
+          {yieldData && yieldData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={yieldData} margin={{ top: 20, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.3} />
                 <XAxis dataKey="crop" stroke="#71717a" tickLine={false} axisLine={false} fontSize={12} />

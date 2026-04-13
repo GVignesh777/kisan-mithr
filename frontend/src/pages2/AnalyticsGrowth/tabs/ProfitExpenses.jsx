@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { IndianRupee, TrendingUp, Wallet, ArrowRightCircle, Plus, Download, FileText } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
 import DataFormModal from '../components/DataFormModal';
+import useUserStore from '../../../store/useUserStore';
 import { exportToCSV, exportToTXT, exportToPDF } from '../../../utils/exportUtils';
 
 import { toast } from 'react-toastify';
@@ -32,21 +33,28 @@ const ProfitExpenses = ({ overviewData, loading: globalLoading, onRefresh }) => 
     toast.success("Report downloaded successfully.");
   };
 
-  useEffect(() => {
+  const { user } = useUserStore();
 
+  useEffect(() => {
     const fetchTrends = async () => {
+      if (!user) return; // 🚫 Prevent calling API if not logged in
+
       try {
         setLoading(true);
         const res = await axiosInstance.get('/analytics/financial-trends');
         setTrends(res.data.data);
       } catch (error) {
+        if (error.response?.status === 401) return; // 🔇 Silent fail
         console.error("Financial fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchTrends();
-  }, []);
+    
+    if (user) {
+      fetchTrends();
+    }
+  }, [user]);
 
   if (globalLoading || loading) {
     return (
@@ -114,27 +122,29 @@ const ProfitExpenses = ({ overviewData, loading: globalLoading, onRefresh }) => 
             </div>
           </div>
           
-          <div className="h-[350px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%" minHeight={350}>
-              <LineChart data={trends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.3} />
-                <XAxis dataKey="month" stroke="#71717a" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis stroke="#71717a" tickLine={false} axisLine={false} fontSize={12} tickFormatter={(val) => `₹${val>=1000 ? val/1000+'k' : val}`} />
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                />
-                <Line 
-                    type="monotone" 
-                    dataKey={(data) => data.income - data.expenses} 
-                    name="Net Profit"
-                    stroke="#10b981" 
-                    strokeWidth={4} 
-                    dot={{ fill: '#10b981', r: 5, strokeWidth: 2, stroke: '#10b981' }} 
-                    activeDot={{ r: 8, stroke: '#10b981', strokeWidth: 4, fill: '#fff' }} 
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-[350px] w-full mt-4" style={{ minHeight: "350px" }}>
+            {trends && trends.length > 0 && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.3} />
+                  <XAxis dataKey="month" stroke="#71717a" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis stroke="#71717a" tickLine={false} axisLine={false} fontSize={12} tickFormatter={(val) => `₹${val>=1000 ? val/1000+'k' : val}`} />
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Line 
+                      type="monotone" 
+                      dataKey={(data) => data.income - data.expenses} 
+                      name="Net Profit"
+                      stroke="#10b981" 
+                      strokeWidth={4} 
+                      dot={{ fill: '#10b981', r: 5, strokeWidth: 2, stroke: '#10b981' }} 
+                      activeDot={{ r: 8, stroke: '#10b981', strokeWidth: 4, fill: '#fff' }} 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

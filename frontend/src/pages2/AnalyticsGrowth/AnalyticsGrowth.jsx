@@ -16,6 +16,7 @@ import Footer from "../../components/Footer";
 
 // Lazy loading tabs for performance
 import axiosInstance from '../../services/url.service';
+import useUserStore from '../../store/useUserStore';
 const OverviewDashboard = React.lazy(() => import('./tabs/OverviewDashboard'));
 const CropAnalytics = React.lazy(() => import('./tabs/CropAnalytics'));
 const ProfitExpenses = React.lazy(() => import('./tabs/ProfitExpenses'));
@@ -27,15 +28,17 @@ const ReportsExport = React.lazy(() => import('./tabs/ReportsExport'));
 
 const AnalyticsGrowth = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [overviewData, setOverviewData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useUserStore();
 
   const fetchOverview = async () => {
+    if (!user) return; // 🚫 Prevent calling API if not logged in
+
     try {
       setLoading(true);
       const res = await axiosInstance.get('/analytics/overview');
       setOverviewData(res.data.data);
     } catch (error) {
+      if (error.response?.status === 401) return; // 🔇 Silent fail for auth errors
       console.error("Error fetching overview:", error);
     } finally {
       setLoading(false);
@@ -43,8 +46,10 @@ const AnalyticsGrowth = () => {
   };
 
   React.useEffect(() => {
-    fetchOverview();
-  }, []);
+    if (user) {
+      fetchOverview();
+    }
+  }, [user]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },

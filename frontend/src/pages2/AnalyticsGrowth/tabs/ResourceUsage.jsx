@@ -1,25 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Droplet, Leaf, Bug, Activity } from 'lucide-react';
 import axiosInstance from '../../../services/url.service';
+import useUserStore from '../../../store/useUserStore';
 
 const ResourceUsage = ({ overviewData, loading: globalLoading }) => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useUserStore();
+
   useEffect(() => {
     const fetchResources = async () => {
+      if (!user) return; // 🚫 Prevent calling API if not logged in
+
       try {
         setLoading(true);
         const res = await axiosInstance.get('/analytics/resources');
         setResources(res.data.data || []);
       } catch (error) {
+        if (error.response?.status === 401) return; // 🔇 Silent fail
         console.error("Resource fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchResources();
-  }, []);
+    
+    if (user) {
+      fetchResources();
+    }
+  }, [user]);
 
   if (globalLoading || loading) {
     return (

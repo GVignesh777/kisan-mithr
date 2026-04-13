@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '../../../services/url.service';
+import useUserStore from '../../../store/useUserStore';
 import DataFormModal from '../components/DataFormModal';
 import SimulationModal from '../components/SimulationModal';
 
@@ -33,7 +34,11 @@ const GrowthPlanning = ({ onRefresh }) => {
     setIsModalOpen(true);
   };
 
+  const { user } = useUserStore();
+
   const fetchData = async () => {
+    if (!user) return; // 🚫 Prevent calling API if not logged in
+
     try {
       setLoading(true);
       const [scenarioRes, roiRes] = await Promise.all([
@@ -43,6 +48,7 @@ const GrowthPlanning = ({ onRefresh }) => {
       setData(scenarioRes.data.data);
       setRoiStats(roiRes.data.data);
     } catch (err) {
+      if (err.response?.status === 401) return; // 🔇 Silent fail
       console.error("Growth Data Fetch Error:", err);
       setError("Failed to generate growth predictions. Please ensure you have sufficient records.");
     } finally {
@@ -51,8 +57,10 @@ const GrowthPlanning = ({ onRefresh }) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const getRiskColor = (level) => {
     switch (level?.toLowerCase()) {
