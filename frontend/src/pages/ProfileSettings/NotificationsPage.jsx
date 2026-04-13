@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, ShieldAlert, Landmark, MessageSquare, Shield, X, Send, CheckCheck } from 'lucide-react';
 import useUserStore from '../../store/useUserStore';
+import { useSocket } from '../../context/SocketContext';
 
 const MOCK_NOTIFICATIONS = [
     {
@@ -31,7 +32,28 @@ const MOCK_NOTIFICATIONS = [
 
 const NotificationsPage = () => {
     const { user } = useUserStore();
+    const { notifications: liveNotifications, resetUnreadCount } = useSocket();
     const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+
+    // Sync live notifications from socket
+    useEffect(() => {
+        if (liveNotifications.length > 0) {
+            const formatted = liveNotifications.map(n => ({
+                id: n._id || Date.now() + Math.random(),
+                type: n.senderName === 'Admin' ? 'admin' : 'gov', // Map appropriately
+                title: n.title,
+                message: n.message,
+                timestamp: n.createdAt || new Date().toISOString(),
+                read: false
+            }));
+            setNotifications(prev => [...formatted, ...prev]);
+        }
+    }, [liveNotifications]);
+
+    // Clear badge when viewing notifications
+    useEffect(() => {
+        resetUnreadCount();
+    }, [resetUnreadCount]);
     const [activeChat, setActiveChat] = useState(null);
     const [chatMessages, setChatMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');

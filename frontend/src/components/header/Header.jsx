@@ -11,9 +11,10 @@ import DropdownSchemes from "./DropdownSchemes";
 import DropdownContact from "./DropdownContact";
 import DropdownProfile from "./DropdownProfile";
 import useTranslation from "../../hooks/useTranslation";
-import { Menu } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Menu, Bell } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import HomePageSidebar from "./HomePageSidebar";
+import { useSocket } from "../../context/SocketContext";
 
 export default function Header() {
   const { user: userData } = useAuth();
@@ -21,6 +22,8 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const { unreadCount, resetUnreadCount } = useSocket();
+  const navigate = useNavigate();
   
   const isTermsPage = location.pathname === "/terms";
   const isGuest = !userData || Object.keys(userData).length === 0;
@@ -171,6 +174,24 @@ export default function Header() {
 
         {/* Language & User Profile */}
         <div className="flex items-center gap-4">
+          
+          {/* Real-time Notification Bell */}
+          {!isGuest && (
+            <div className="relative cursor-pointer group" onClick={() => {
+              navigate('/notifications');
+              resetUnreadCount();
+            }}>
+              <div className={`p-2 rounded-xl transition-all duration-300 ${scrolled ? 'bg-zinc-900 border border-zinc-800' : 'bg-black/40 border border-white/10'} group-hover:border-green-500/50`}>
+                <Bell size={20} className={scrolled ? 'text-zinc-400 group-hover:text-green-400' : 'text-zinc-200 group-hover:text-green-400'} />
+              </div>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg animate-bounce">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center">
             <LanguageSwitcher scrolled={scrolled} />
           </div>

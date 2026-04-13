@@ -19,7 +19,7 @@ const DropdownHome = ({ isMobile }) => {
       icon: LayoutDashboard,
       title: t("dropdownHome.platformOverview"),
       desc: t("dropdownHome.platformOverviewDesc"),
-      path: "/",
+      path: "/overview",
     },
     {
       icon: Leaf,

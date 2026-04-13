@@ -13,6 +13,7 @@ const {
   getROIStats,
   simulateGrowth
 } = require("../controllers/analyticsController");
+const { getPlatformOverview } = require("../controllers/platformController");
 
 
 
@@ -23,6 +24,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get("/overview", getOverview);
+router.get("/platform-overview", getPlatformOverview);
 router.get("/financial-trends", getFinancialTrends);
 router.get("/yields", getYieldAnalytics);
 router.get("/resources", getResources);

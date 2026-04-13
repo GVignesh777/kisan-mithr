@@ -34,6 +34,7 @@ const GovSchemes = React.lazy(() => import("./pages2/GovSchemes/GovSchemes"));
 const SatelliteHealthCockpit = React.lazy(() => import("./pages2/CropHealth/SatelliteHealthCockpit"));
 const PesticideCalculator = React.lazy(() => import("./pages2/PesticideCalc/PesticideCalculator"));
 const AnalyticsGrowth = React.lazy(() => import("./pages2/AnalyticsGrowth/AnalyticsGrowth"));
+const PlatformOverview = React.lazy(() => import("./pages2/PlatformOverview/PlatformOverview"));
 const Role = React.lazy(() => import("./components/Role"));
 const ErrorPage = React.lazy(() => import("./components/ErrorPage"));
 
@@ -165,6 +166,7 @@ const App = () => {
                 <Route path="/schemes" element={<GovSchemes />} />
                 <Route path="/pesticide-calc" element={<PesticideCalculator />} />
                 <Route path="/analytics-growth" element={<AnalyticsGrowth />} />
+                <Route path="/overview" element={<PlatformOverview />} />
               </Route>
 
             {/* 🛒 Buyer Specific Routes */}

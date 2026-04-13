@@ -66,7 +66,7 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
 
           <nav className="flex flex-col space-y-2">
             {/* Assistant & Analytics */}
-            <div className="flex flex-col gap-2 border-b border-zinc-800/50 pb-4 mb-2">
+            {/* <div className="flex flex-col gap-2 border-b border-zinc-800/50 pb-4 mb-2">
               <button
                 onClick={() => handleNavigation("/assistant")}
                 className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-zinc-800/80 text-zinc-300 hover:text-white transition-all group"
@@ -86,7 +86,7 @@ const HomePageSidebar = ({ isOpen, onClose }) => {
                 </div>
                 <span className="font-medium text-lg">Analytics</span>
               </button>
-            </div>
+            </div> */}
 
             {/* HOME */}
             <div className="flex flex-col gap-1 border-b border-zinc-800/50 pb-2">

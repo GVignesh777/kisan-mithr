@@ -18,6 +18,17 @@ const createNotification = async (req, res) => {
       title, message, region, cropType, createdBy: req.user._id
     });
     await notification.save();
+
+    // Emit real-time notification via Socket.io
+    const io = req.app.get('io');
+    if (io) {
+      if (region && region !== "Global") {
+        io.to(region).emit('new-notification', notification);
+      } else {
+        io.emit('new-notification', notification);
+      }
+    }
+
     res.status(201).json(notification);
   } catch (error) {
     res.status(500).json({ message: 'Error creating notification' });

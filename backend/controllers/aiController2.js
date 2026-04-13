@@ -15,6 +15,49 @@ const groq = new Groq({
 
 const Conversation = require('../models/Conversation');
 
+exports.overviewChat = async (req, res) => {
+    try {
+        const { message, history } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'message is required' });
+        }
+
+        const systemPrompt = `You are an agriculture expert AI assistant for "Kisan Mithr". 
+        Only answer farming-related questions including crops, soil, irrigation, pests, fertilizers, and weather. 
+        If the question is unrelated, return exactly this string: "I can only help with agriculture-related questions 🌾"
+        
+        STRICT RULES:
+        1. Keep responses short, practical, and farmer-friendly (max 3-4 sentences).
+        2. Always politely refuse non-agriculture questions.
+        3. Use friendly icons like 🌾, 🚜, 🌱 where appropriate.`;
+
+        // Map history for Groq
+        const messagesForLLM = [
+            { role: 'system', content: systemPrompt },
+            ...(history || []).slice(-4).map(m => ({
+                role: m.sender === 'user' ? 'user' : 'assistant',
+                content: m.text
+            })),
+            { role: 'user', content: message }
+        ];
+
+        const chatCompletion = await groq.chat.completions.create({
+            messages: messagesForLLM,
+            model: 'llama-3.1-8b-instant',
+            temperature: 0.5,
+            max_tokens: 500,
+        });
+
+        const aiResponse = chatCompletion.choices[0]?.message?.content || "";
+        res.json({ text: aiResponse });
+
+    } catch (error) {
+        console.error('Overview Chat Error:', error);
+        res.status(500).json({ error: 'Failed to generate AI response' });
+    }
+};
+
 exports.askAI = async (req, res) => {
     try {
         const { userMessage, message, language, userId, chatId } = req.body;

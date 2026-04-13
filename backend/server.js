@@ -71,4 +71,37 @@ const startMarketPriceCron = require("./cron/marketPriceCron.js");
 startMarketPriceCron();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
+const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    credentials: true
+  }
+});
+
+// Real-time notification handling
+io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+  
+  socket.on("join-farmer-room", (userId) => {
+    socket.join(userId.toString());
+    console.log(`User ${userId} joined their notification room.`);
+  });
+
+  socket.on("join-region", (region) => {
+    socket.join(region);
+    console.log(`User ${socket.id} joined region room: ${region}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+// Global accessibility of io
+app.set("io", io);
+
+server.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
